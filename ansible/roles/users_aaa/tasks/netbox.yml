@@ -1,0 +1,13 @@
+---
+# NetBox source of truth for the users_aaa role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. AAA servers,
+# 802.1X settings and break-glass local accounts have no native NetBox
+# model, so they come from the device's config context. Secrets stay in
+# vault and are never sourced from NetBox. See docs/netbox.md.
+- name: "Users_aaa | netbox | resolve AAA inputs from config context"
+  ansible.builtin.set_fact:
+    users_aaa_servers: "{{ config_context.aaa_servers | default(users_aaa_servers) }}"
+    users_aaa_dot1x: "{{ config_context.dot1x | default(users_aaa_dot1x) }}"
+    users_aaa_local: "{{ config_context.users_aaa_local | default(users_aaa_local) }}"
+  when: config_context is defined

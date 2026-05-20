@@ -1,4 +1,10 @@
 ---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "Acl_firewall | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
 - name: "Acl_firewall | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"

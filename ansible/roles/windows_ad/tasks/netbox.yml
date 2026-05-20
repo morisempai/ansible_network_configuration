@@ -1,0 +1,15 @@
+---
+# NetBox source of truth for the windows_ad role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. The domain and
+# replication settings come from the device's config context.
+# windows_ad_safe_mode_password stays in vault and is never sourced from
+# NetBox. See docs/netbox.md.
+- name: "Windows_ad | netbox | resolve AD inputs from config context"
+  ansible.builtin.set_fact:
+    windows_ad_domain: "{{ config_context.windows_ad_domain | default(windows_ad_domain) }}"
+    windows_ad_is_primary: >-
+      {{ config_context.windows_ad_is_primary | default(windows_ad_is_primary) }}
+    windows_ad_replica_of: >-
+      {{ config_context.windows_ad_replica_of | default(windows_ad_replica_of) }}
+  when: config_context is defined

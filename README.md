@@ -34,6 +34,7 @@ and FortiGate, neither of which speak OpenConfig cleanly.
 ├── docs/
 │   ├── architecture-brief.md  # SOT for site/VLAN/device design
 │   ├── adding-a-role.md       # how to add a new role to this repo
+│   ├── netbox.md              # NetBox as the single source of truth
 │   ├── lab.md                 # how to run the Containerlab test lab
 │   └── testing.md             # full testing strategy (lint → lab → prod)
 ├── .github/
@@ -44,12 +45,11 @@ and FortiGate, neither of which speak OpenConfig cleanly.
 │   ├── requirements.yml       # Ansible collections
 │   ├── requirements.txt       # Python dependencies
 │   ├── inventory/
-│   │   ├── lab/               # static inventory for the Containerlab topology
-│   │   ├── staging/           # NetBox dynamic inventory (staging instance)
-│   │   └── prod/              # NetBox dynamic inventory (production)
-│   ├── group_vars/            # cross-cutting variables per device class
-│   ├── host_vars/             # per-host overrides
-│   ├── playbooks/             # site.yml, bootstrap.yml, per-class playbooks
+│   │   ├── lab/               # static inventory + group_vars (NetBox off)
+│   │   ├── staging/           # NetBox dynamic inventory + group_vars (on)
+│   │   └── prod/              # NetBox dynamic inventory + group_vars (on)
+│   ├── playbooks/             # site.yml, bootstrap.yml, per-class playbooks;
+│   │                          #   holds shared group_vars/ and host_vars/
 │   └── roles/                 # 10 vendor-agnostic roles (see below)
 ├── lab/
 │   ├── topology.clab.yml      # Containerlab topology (SR Linux + FRR + Linux)
@@ -75,6 +75,21 @@ and FortiGate, neither of which speak OpenConfig cleanly.
 | `backup_config` | Pull running-config from network devices to a git repo    |
 
 Each role lives under `ansible/roles/<name>/` and has its own README.
+
+## Source of truth: NetBox
+
+In staging and production, **NetBox is the single source of truth** for every
+role's data. Each role resolves its inputs from NetBox at run time — VLANs and
+interfaces from native IPAM/DCIM objects, everything else from the device's
+config context — instead of from static files.
+
+This is controlled by the `netbox_enabled` toggle, which follows the inventory:
+the NetBox inventories (`staging/`, `prod/`) turn it on, while the Containerlab
+`lab/` inventory and Molecule leave it off and fall back to the static
+`group_vars`. So development and CI need no NetBox instance.
+
+See [docs/netbox.md](docs/netbox.md) for the full design — the layered model,
+the toggle, config-context keys, and how to add NetBox support to a new role.
 
 ## Getting started
 

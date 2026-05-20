@@ -1,4 +1,10 @@
 ---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "Common | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
 # Dispatcher. Maps ansible_network_os -> per-vendor task file, falling back to
 # ansible_os_family for non-network hosts, then to linux.yml as a last resort.
 # 'select' drops the empty candidate when ansible_network_os is unknown —

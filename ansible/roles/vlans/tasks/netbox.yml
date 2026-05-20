@@ -1,0 +1,16 @@
+---
+# NetBox source of truth for the vlans role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. VLANs are native
+# NetBox IPAM objects, so they are queried directly with nb_lookup. The VLAN
+# scheme is network-wide (docs/architecture-brief.md), hence no per-site
+# filter. Overrides vlans_config; see docs/netbox.md.
+- name: "Vlans | netbox | resolve the VLAN database from NetBox IPAM"
+  ansible.builtin.set_fact:
+    vlans_config: >-
+      {{ query('netbox.netbox.nb_lookup', 'vlans',
+               api_endpoint=netbox_url,
+               token=netbox_token,
+               validate_certs=netbox_validate_certs,
+               api_filter='status=active')
+         | community.general.json_query('[].value.{id: vid, name: name}') }}

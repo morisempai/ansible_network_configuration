@@ -1,4 +1,10 @@
 ---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "Backup_config | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
 - name: "Backup_config | ensure backup directory exists"
   ansible.builtin.file:
     path: "{{ backup_config_dir }}/{{ inventory_hostname }}"

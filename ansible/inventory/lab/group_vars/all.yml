@@ -1,0 +1,8 @@
+---
+# Per-environment variables for the Containerlab lab inventory.
+# Loaded automatically because this file sits next to the inventory source.
+#
+# The lab has no NetBox instance, so NetBox integration is off and every
+# role takes its inputs from the static group_vars under
+# ansible/playbooks/group_vars/. See docs/netbox.md.
+netbox_enabled: false

@@ -10,7 +10,8 @@ follow this pattern.
 ```bash
 ROLE=my_new_role
 mkdir -p ansible/roles/$ROLE/{tasks,defaults,meta,molecule/default}
-touch ansible/roles/$ROLE/{README.md,defaults/main.yml,meta/main.yml,tasks/main.yml}
+touch ansible/roles/$ROLE/{README.md,defaults/main.yml,meta/main.yml}
+touch ansible/roles/$ROLE/tasks/{main.yml,netbox.yml}
 ```
 
 ## 2. Dispatcher (`tasks/main.yml`)
@@ -21,9 +22,16 @@ for the role name in the task `name:`. (`common`, `linux_base` and
 
 ```yaml
 ---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "my_new_role | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
 # Dispatcher. Maps ansible_network_os -> per-vendor task file, falling back to
 # ansible_os_family for non-network hosts, then to linux.yml. Missing
-# implementations are silently skipped (errors='ignore').
+# implementations are silently skipped (errors='ignore'); 'select' drops the
+# empty candidate so first_found never matches the tasks/ directory itself.
 - name: "my_new_role | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
   vars:
@@ -39,7 +47,7 @@ for the role name in the task `name:`. (`common`, `linux_base` and
       - "linux.yml"
     _vendor_task_file: >-
       {{ lookup('ansible.builtin.first_found',
-                _candidates, errors='ignore',
+                _candidates | select | list, errors='ignore',
                 paths=[role_path + '/tasks']) }}
   when: _vendor_task_file | length > 0
 ```
@@ -62,7 +70,44 @@ Only create the files your role targets. `first_found` with `errors='ignore'`
 silently skips missing candidates, and the `when:` guard makes the whole
 include a clean no-op when no implementation exists for the host's vendor.
 
-## 3. Variable interface (`defaults/main.yml`)
+## 3. NetBox source of truth (`tasks/netbox.yml`)
+
+In staging and production, NetBox — not `defaults/` or `group_vars/` — is the
+source of truth. `tasks/main.yml` includes `tasks/netbox.yml` first (see the
+dispatcher above), and that file `set_fact`s the role's input variables from
+NetBox.
+
+If the data is a native NetBox object (VLANs, interfaces, IP addresses), query
+it with `nb_lookup`:
+
+```yaml
+---
+- name: "my_new_role | netbox | resolve interfaces from NetBox DCIM"
+  ansible.builtin.set_fact:
+    my_new_role_interfaces: >-
+      {{ query('netbox.netbox.nb_lookup', 'interfaces',
+               api_endpoint=netbox_url, token=netbox_token,
+               validate_certs=netbox_validate_certs,
+               api_filter='device=' ~ inventory_hostname)
+         | community.general.json_query('[].value.{name: name, mtu: mtu}') }}
+```
+
+Otherwise read the device's merged config context, falling back to the static
+value for any key NetBox does not supply:
+
+```yaml
+---
+- name: "my_new_role | netbox | resolve inputs from config context"
+  ansible.builtin.set_fact:
+    my_new_role_interfaces: >-
+      {{ config_context.my_interfaces | default(my_new_role_interfaces) }}
+  when: config_context is defined
+```
+
+When `netbox_enabled` is off (lab, Molecule) this file never runs and the
+`defaults/` values stand. See [netbox.md](netbox.md) for the full design.
+
+## 4. Variable interface (`defaults/main.yml`)
 
 Define the role's input variables here, with sensible defaults. The
 **same** variables drive every vendor implementation:
@@ -79,7 +124,7 @@ my_new_role_interfaces: []
 
 Document every variable in the role's `README.md`.
 
-## 4. Per-vendor implementation
+## 5. Per-vendor implementation
 
 Each vendor file consumes the same variables but speaks the vendor's modules:
 
@@ -104,7 +149,7 @@ Each vendor file consumes the same variables but speaks the vendor's modules:
   loop: "{{ my_new_role_interfaces }}"
 ```
 
-## 5. Molecule scenario
+## 6. Molecule scenario
 
 ```yaml
 # molecule/default/molecule.yml
@@ -158,11 +203,12 @@ cd ansible/roles/my_new_role
 molecule test
 ```
 
-## 6. README
+## 7. README
 
 Every role needs a `README.md` with: purpose, supported device classes,
-variable reference, example usage, known limitations.
+variable reference, NetBox source (which IPAM/DCIM objects or config-context
+keys feed the role), example usage, known limitations.
 
-## 7. Open a PR
+## 8. Open a PR
 
 CI will run lint and Molecule against the role automatically.

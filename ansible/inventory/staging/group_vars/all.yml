@@ -1,0 +1,15 @@
+---
+# Per-environment variables for the staging NetBox inventory.
+# Loaded automatically because this file sits next to the inventory source.
+#
+# With netbox_enabled true, every role resolves its inputs from NetBox —
+# IPAM/DCIM objects via nb_lookup, everything else from config context.
+# See docs/netbox.md.
+netbox_enabled: true
+
+# NetBox connection used by the in-role nb_lookup queries. The dynamic
+# inventory plugin is configured separately in netbox.yml; this is the
+# endpoint the roles themselves query at run time.
+netbox_url: "https://netbox-staging.example.internal"
+netbox_token: "{{ lookup('ansible.builtin.env', 'NETBOX_TOKEN') }}"
+netbox_validate_certs: true

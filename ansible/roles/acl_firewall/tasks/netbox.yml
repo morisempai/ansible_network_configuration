@@ -1,0 +1,12 @@
+---
+# NetBox source of truth for the acl_firewall role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. ACL / firewall
+# policy has no native NetBox model, so the default action and rule list
+# come from the device's config context. See docs/netbox.md.
+- name: "Acl_firewall | netbox | resolve policy from config context"
+  ansible.builtin.set_fact:
+    acl_firewall_default_action: >-
+      {{ config_context.acl_default_action | default(acl_firewall_default_action) }}
+    acl_firewall_rules: "{{ config_context.acl_rules | default(acl_firewall_rules) }}"
+  when: config_context is defined

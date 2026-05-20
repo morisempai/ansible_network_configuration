@@ -5,6 +5,8 @@
 plugin: netbox.netbox.nb_inventory
 api_endpoint: "https://netbox.example.internal"
 validate_certs: true
+# config_context is merged into hostvars and is the source of truth for
+# role data without a native NetBox model (ACLs, QoS, AAA, ...).
 config_context: true
 group_by:
   - device_roles

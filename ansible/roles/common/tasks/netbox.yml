@@ -1,0 +1,16 @@
+---
+# NetBox source of truth for the common role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. NTP, DNS, syslog,
+# SNMP and the login banner have no native NetBox model, so they come from
+# the device's config context (merged into hostvars by the nb_inventory
+# plugin). Keys absent from config context keep their static value.
+# See docs/netbox.md.
+- name: "Common | netbox | resolve baseline inputs from config context"
+  ansible.builtin.set_fact:
+    common_ntp_servers: "{{ config_context.ntp_servers | default(common_ntp_servers) }}"
+    common_dns_servers: "{{ config_context.dns_servers | default(common_dns_servers) }}"
+    common_syslog_servers: "{{ config_context.syslog_servers | default(common_syslog_servers) }}"
+    common_snmp_v3: "{{ config_context.snmp_v3 | default(common_snmp_v3) }}"
+    common_banner: "{{ config_context.login_banner | default(common_banner) }}"
+  when: config_context is defined
