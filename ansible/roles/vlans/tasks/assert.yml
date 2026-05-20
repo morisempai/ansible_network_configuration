@@ -1,0 +1,31 @@
+---
+# Schema check for vlans_config. This pins the vendor-agnostic interface:
+# every tasks/<vendor>.yml file can assume each item has an integer `id`
+# in 1-4094 and a non-empty `name`. Runs after NetBox resolution so it
+# validates whatever actually feeds the device task.
+- name: "Vlans | assert | every VLAN has a valid id and name"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.id is defined
+      - item.id is integer
+      - item.id >= 1
+      - item.id <= 4094
+      - item.name is defined
+      - item.name | string | length > 0
+    fail_msg: >-
+      Invalid VLAN entry {{ item }} — each vlans_config item needs an
+      integer `id` (1-4094) and a non-empty `name`.
+  loop: "{{ vlans_config }}"
+  loop_control:
+    label: "{{ item.id | default('?') }}"
+
+- name: "Vlans | assert | VLAN ids are unique"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - vlans_config | map(attribute='id') | list | length
+        == vlans_config | map(attribute='id') | unique | list | length
+    fail_msg: >-
+      Duplicate VLAN id in vlans_config:
+      {{ vlans_config | map(attribute='id') | list }}

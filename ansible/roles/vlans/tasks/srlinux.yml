@@ -1,11 +1,15 @@
 ---
-- name: "Vlans | srlinux | network-instance per VLAN (mac-vrf)"
+# On SR Linux an L2 broadcast domain is a mac-vrf network-instance. This
+# declares one per VLAN; binding subinterfaces and VLAN encapsulation to it
+# is the interfaces role's job. nokia.srlinux.config is idempotent per path.
+- name: "Vlans | srlinux | mac-vrf network-instance per VLAN"
   nokia.srlinux.config:
     update:
       - path: "/network-instance[name=vlan-{{ item.id }}]"
         value:
           type: mac-vrf
+          admin-state: enable
           description: "{{ item.name }}"
   loop: "{{ vlans_config }}"
   loop_control:
-    label: "{{ item.id }}"
+    label: "vlan-{{ item.id }}"

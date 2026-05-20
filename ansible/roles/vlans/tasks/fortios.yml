@@ -1,7 +1,11 @@
 ---
-- name: "Vlans | fortios | VLAN sub-interfaces"
+# A FortiGate has no switch-style VLAN database. On the regional
+# router-on-a-stick (docs/architecture-brief.md) each VLAN is a tagged
+# sub-interface of the LAN port — this declares that sub-interface. IP
+# addressing and gateways are the l3_routing role's responsibility.
+- name: "Vlans | fortios | tagged VLAN sub-interface per VLAN"
   fortinet.fortios.fortios_system_interface:
-    vdom: root
+    vdom: "{{ fortios_vdom | default('root') }}"
     state: present
     system_interface:
       name: "vlan{{ item.id }}"
@@ -11,4 +15,4 @@
       description: "{{ item.name }}"
   loop: "{{ vlans_config }}"
   loop_control:
-    label: "{{ item.id }}"
+    label: "vlan{{ item.id }}"

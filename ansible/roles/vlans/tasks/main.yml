@@ -5,6 +5,11 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# Fail fast on a malformed VLAN database before touching any device.
+- name: "Vlans | validate the VLAN database schema"
+  ansible.builtin.include_tasks: assert.yml
+  when: vlans_config | length > 0
+
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
 - name: "Vlans | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
