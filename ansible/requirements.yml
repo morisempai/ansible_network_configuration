@@ -13,6 +13,10 @@ collections:
   # Nokia (lab + future production)
   - name: nokia.srlinux
 
+  # FRR — lab L3 / Linux-switch nodes (provides the frr.frr.frr cliconf
+  # plugin that network_cli needs; two of the five lab nodes are FRR).
+  - name: frr.frr
+
   # Generic networking helpers
   - name: ansible.netcommon
     version: ">=6.1.0"

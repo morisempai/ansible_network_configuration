@@ -11,7 +11,6 @@ runs both locally on Linux/WSL and on GitHub-hosted runners.
 | HQ core / regional edge      | `ghcr.io/nokia/srlinux:latest`         | Cisco C9300 / C9200    |
 | HQ access / lab switch       | `quay.io/frrouting/frr:latest`         | Linux-based switch     |
 | Linux server                 | `ghcr.io/hellt/network-multitool`      | DL360 hypervisor       |
-| Test client                  | `alpine:latest`                        | Corporate workstation  |
 
 FortiGate, Windows, and HPE iLO are **not** simulated — they require licensed
 or KVM-only images. Roles for those device classes are still lintable and
