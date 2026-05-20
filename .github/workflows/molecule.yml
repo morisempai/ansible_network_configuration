@@ -48,14 +48,13 @@ jobs:
 
   molecule-windows:
     name: "molecule: windows_ad"
-    runs-on: windows-latest
-    # Placeholder: the windows_ad scenario uses the delegated driver and needs
-    # a reachable Windows host. Until a self-hosted AD test box is wired up,
-    # this job only validates that the role and scenario parse.
-    env:
-      # Ansible aborts unless the locale encoding is UTF-8; the Windows runner
-      # defaults to cp1252, so force the CPython UTF-8 mode.
-      PYTHONUTF8: "1"
+    # Runs on Linux on purpose: ansible-core requires a UTF-8 locale and does
+    # not support a Windows control node, so ansible-galaxy / ansible-lint
+    # cannot run on a windows-latest runner. A real `molecule test` for
+    # windows_ad needs a reachable Windows *managed* node (delegated driver —
+    # see the role's molecule.yml); until a self-hosted AD test box is wired
+    # up, this job lints the role only.
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,6 +63,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Install Ansible
         run: pip install ansible-core ansible-lint
