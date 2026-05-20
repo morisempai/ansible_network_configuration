@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: interfaces
+  namespace: examplecorp
   author: ExampleCorp Network Ops
   description: Physical interface attributes and LACP membership.
   license: MIT

@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: common
+  namespace: examplecorp
   author: ExampleCorp Network Ops
   description: Baseline (hostname/NTP/DNS/syslog/SNMP/banner) for every device.
   license: MIT

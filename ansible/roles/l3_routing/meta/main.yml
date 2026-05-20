@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: l3_routing
+  namespace: examplecorp
   author: ExampleCorp Network Ops
   description: SVIs, static routes and dynamic routing for L3 devices.
   license: MIT

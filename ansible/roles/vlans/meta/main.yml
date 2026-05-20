@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: vlans
+  namespace: examplecorp
   author: ExampleCorp Network Ops
   description: VLAN database management across L2 devices.
   license: MIT

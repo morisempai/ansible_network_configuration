@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: linux_base
+  namespace: examplecorp
   author: ExampleCorp Network Ops
   description: Base hardening and monitoring agent for Linux servers.
   license: MIT

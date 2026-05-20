@@ -1,6 +1,7 @@
 ---
 galaxy_info:
   role_name: windows_ad
+  namespace: examplecorp
   author: ExampleCorp Network Ops
   description: Base config and Active Directory Domain Services for Windows.
   license: MIT
