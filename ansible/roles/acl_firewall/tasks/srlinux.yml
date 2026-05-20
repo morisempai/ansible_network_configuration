@@ -1,5 +1,5 @@
 ---
-- name: "acl_firewall | srlinux | IPv4 ACL entries"
+- name: "Acl_firewall | srlinux | IPv4 ACL entries"
   nokia.srlinux.config:
     update:
       - path: "/acl/ipv4-filter[name=inter-vlan]/entry[sequence-id={{ (idx + 1) * 10 }}]"

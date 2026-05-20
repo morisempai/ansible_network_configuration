@@ -10,6 +10,8 @@ rules:
     check-keys: false
   comments:
     min-spaces-from-content: 1
+  # ansible-lint's bundled yaml rule requires this disabled.
+  comments-indentation: disable
   braces:
     max-spaces-inside: 1
   octal-values:
@@ -19,5 +21,7 @@ rules:
 ignore: |
   .github/
   .ansible/
+  .venv/
+  .cache/
   ansible/collections/
-  molecule/*/.molecule/
+  **/.molecule/

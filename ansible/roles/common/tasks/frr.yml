@@ -2,7 +2,7 @@
 # FRR is configured via vtysh; there is no first-class network_os module for
 # it, so we send raw commands. Keep the command list small and idempotent.
 
-- name: "common | frr | hostname + log destinations"
+- name: "Common | frr | hostname + log destinations"
   ansible.netcommon.cli_config:
     config: |
       hostname {{ common_hostname }}

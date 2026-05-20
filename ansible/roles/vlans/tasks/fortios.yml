@@ -1,5 +1,5 @@
 ---
-- name: "vlans | fortios | VLAN sub-interfaces"
+- name: "Vlans | fortios | VLAN sub-interfaces"
   fortinet.fortios.fortios_system_interface:
     vdom: root
     state: present

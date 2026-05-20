@@ -1,5 +1,5 @@
 ---
-- name: "interfaces | cisco_ios | base interface attributes"
+- name: "Interfaces | cisco_ios | base interface attributes"
   cisco.ios.ios_interfaces:
     config:
       - name: "{{ item.name }}"
@@ -11,7 +11,7 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: "interfaces | cisco_ios | L2 mode"
+- name: "Interfaces | cisco_ios | L2 mode"
   cisco.ios.ios_l2_interfaces:
     config:
       - name: "{{ item.name }}"

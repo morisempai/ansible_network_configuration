@@ -1,15 +1,14 @@
 ---
-- name: "common | windows | set hostname"
+- name: "Common | windows | set hostname"
   ansible.windows.win_hostname:
     name: "{{ common_hostname }}"
-  register: _hostname
 
-- name: "common | windows | configure W32Time peers"
+- name: "Common | windows | configure W32Time peers"
   ansible.windows.win_command:
     cmd: "w32tm /config /manualpeerlist:\"{{ common_ntp_servers | join(' ') }}\" /syncfromflags:manual /update"
   changed_when: true
 
-- name: "common | windows | login banner (legalnotice)"
+- name: "Common | windows | login banner (legalnotice)"
   ansible.windows.win_regedit:
     path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System
     name: legalnoticetext

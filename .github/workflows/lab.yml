@@ -38,14 +38,13 @@ jobs:
         run: ./lab/deploy.sh up
 
       - name: Run site.yml against the lab
-        working-directory: ansible
         run: |
           CHECK_FLAG="--check"
           if [ "${{ github.event.inputs.apply }}" = "true" ]; then
             CHECK_FLAG=""
           fi
-          ansible-playbook -i inventory/lab/hosts.yml \
-            playbooks/site.yml ${CHECK_FLAG} --diff
+          ansible-playbook -i ansible/inventory/lab/hosts.yml \
+            ansible/playbooks/site.yml ${CHECK_FLAG} --diff
 
       - name: Destroy the lab
         if: always()

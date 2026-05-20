@@ -1,5 +1,5 @@
 ---
-- name: "acl_firewall | fortios | firewall policy allow-list"
+- name: "Acl_firewall | fortios | firewall policy allow-list"
   fortinet.fortios.fortios_firewall_policy:
     vdom: root
     state: present

@@ -1,5 +1,5 @@
 ---
-- name: "users_aaa | fortios | RADIUS servers"
+- name: "Users_aaa | fortios | RADIUS servers"
   fortinet.fortios.fortios_user_radius:
     vdom: root
     user_radius:

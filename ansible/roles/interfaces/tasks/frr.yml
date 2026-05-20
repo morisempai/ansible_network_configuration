@@ -1,5 +1,5 @@
 ---
-- name: "interfaces | frr | configure interfaces"
+- name: "Interfaces | frr | configure interfaces"
   ansible.netcommon.cli_config:
     config: |
       {% for i in interfaces_config %}

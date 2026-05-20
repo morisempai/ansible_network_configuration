@@ -1,11 +1,11 @@
 ---
-- name: "common | cisco_nxos | set hostname"
+- name: "Common | cisco_nxos | set hostname"
   cisco.nxos.nxos_system:
     hostname: "{{ common_hostname }}"
     domain_search: ["{{ org_domain | default(omit) }}"]
     name_servers: "{{ common_dns_servers }}"
 
-- name: "common | cisco_nxos | NTP"
+- name: "Common | cisco_nxos | NTP"
   cisco.nxos.nxos_ntp_global:
     config:
       servers:

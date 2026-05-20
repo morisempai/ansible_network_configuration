@@ -1,19 +1,18 @@
 ---
-- name: "windows_ad | install AD-Domain-Services feature"
+- name: "Windows_ad | install AD-Domain-Services feature"
   ansible.windows.win_feature:
     name: AD-Domain-Services
     include_management_tools: true
     state: present
-  register: _ad_feature
 
-- name: "windows_ad | promote primary domain controller"
+- name: "Windows_ad | promote primary domain controller"
   microsoft.ad.domain:
     dns_domain_name: "{{ windows_ad_domain }}"
     safe_mode_password: "{{ windows_ad_safe_mode_password }}"
     reboot: true
   when: windows_ad_is_primary | bool
 
-- name: "windows_ad | promote replica domain controller"
+- name: "Windows_ad | promote replica domain controller"
   microsoft.ad.domain_controller:
     dns_domain_name: "{{ windows_ad_domain }}"
     safe_mode_password: "{{ windows_ad_safe_mode_password }}"

@@ -1,5 +1,5 @@
 ---
-- name: "backup_config | cisco_ios | fetch running-config"
+- name: "Backup_config | cisco_ios | fetch running-config"
   cisco.ios.ios_config:
     backup: true
     backup_options:

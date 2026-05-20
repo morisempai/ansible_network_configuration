@@ -1,5 +1,5 @@
 ---
-- name: "vlans | srlinux | network-instance per VLAN (mac-vrf)"
+- name: "Vlans | srlinux | network-instance per VLAN (mac-vrf)"
   nokia.srlinux.config:
     update:
       - path: "/network-instance[name=vlan-{{ item.id }}]"

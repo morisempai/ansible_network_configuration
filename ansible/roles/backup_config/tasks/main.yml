@@ -1,5 +1,5 @@
 ---
-- name: "backup_config | ensure backup directory exists"
+- name: "Backup_config | ensure backup directory exists"
   ansible.builtin.file:
     path: "{{ backup_config_dir }}/{{ inventory_hostname }}"
     state: directory
@@ -7,7 +7,7 @@
   delegate_to: localhost
 
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
-- name: "backup_config | include vendor task file"
+- name: "Backup_config | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
   vars:
     _vendor_map:

@@ -1,5 +1,5 @@
 ---
-- name: "interfaces | srlinux | configure interfaces"
+- name: "Interfaces | srlinux | configure interfaces"
   nokia.srlinux.config:
     update:
       - path: "/interface[name={{ item.name }}]"

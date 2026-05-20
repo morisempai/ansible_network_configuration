@@ -5,6 +5,4 @@ galaxy_info:
   description: Baseline (hostname/NTP/DNS/syslog/SNMP/banner) for every device.
   license: MIT
   min_ansible_version: "2.16"
-  platforms:
-    - name: Any
 dependencies: []

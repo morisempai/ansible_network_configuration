@@ -1,11 +1,11 @@
 ---
-- name: "common | fortios | hostname"
+- name: "Common | fortios | hostname"
   fortinet.fortios.fortios_system_global:
     vdom: root
     system_global:
       hostname: "{{ common_hostname }}"
 
-- name: "common | fortios | NTP"
+- name: "Common | fortios | NTP"
   fortinet.fortios.fortios_system_ntp:
     vdom: root
     system_ntp:
@@ -14,14 +14,14 @@
       ntpserver:
         "{{ common_ntp_servers | map('community.general.dict_kv', 'server') | list }}"
 
-- name: "common | fortios | DNS"
+- name: "Common | fortios | DNS"
   fortinet.fortios.fortios_system_dns:
     vdom: root
     system_dns:
       primary: "{{ common_dns_servers[0] }}"
       secondary: "{{ common_dns_servers[1] | default(omit) }}"
 
-- name: "common | fortios | syslog destinations"
+- name: "Common | fortios | syslog destinations"
   fortinet.fortios.fortios_log_syslogd_setting:
     vdom: root
     log_syslogd_setting:

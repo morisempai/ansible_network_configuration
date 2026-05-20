@@ -1,14 +1,14 @@
 ---
-- name: "backup_config | fortios | fetch full configuration"
+- name: "Backup_config | fortios | fetch full configuration"
   fortinet.fortios.fortios_monitor_fact:
     selector: system_config_backup
     vdom: root
-  register: _fgt_backup
+  register: backup_config_fgt_backup
 
-- name: "backup_config | fortios | write config to file"
+- name: "Backup_config | fortios | write config to file"
   ansible.builtin.copy:
     dest: >-
       {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.conf
-    content: "{{ _fgt_backup.meta.raw | default('') }}"
+    content: "{{ backup_config_fgt_backup.meta.raw | default('') }}"
     mode: "0640"
   delegate_to: localhost

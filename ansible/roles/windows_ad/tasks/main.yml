@@ -1,4 +1,4 @@
 ---
 # Windows-only role: no vendor dispatch needed.
-- name: "windows_ad | apply Windows AD configuration"
+- name: "Windows_ad | apply Windows AD configuration"
   ansible.builtin.include_tasks: windows.yml

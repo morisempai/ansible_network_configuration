@@ -1,5 +1,5 @@
 ---
-- name: "common | srlinux | set hostname and DNS"
+- name: "Common | srlinux | set hostname and DNS"
   nokia.srlinux.config:
     update:
       - path: /system/name
@@ -9,7 +9,7 @@
         value:
           server-list: "{{ common_dns_servers }}"
 
-- name: "common | srlinux | NTP"
+- name: "Common | srlinux | NTP"
   nokia.srlinux.config:
     update:
       - path: /system/ntp

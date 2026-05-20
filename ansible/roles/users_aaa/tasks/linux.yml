@@ -1,5 +1,5 @@
 ---
-- name: "users_aaa | linux | local break-glass accounts"
+- name: "Users_aaa | linux | local break-glass accounts"
   ansible.builtin.user:
     name: "{{ item.name }}"
     shell: /bin/bash

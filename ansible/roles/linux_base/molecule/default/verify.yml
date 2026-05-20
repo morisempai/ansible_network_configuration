@@ -3,26 +3,26 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: "linux_base | read sshd_config"
+    - name: "Linux_base | read sshd_config"
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config
-      register: _sshd
+      register: linux_base_sshd
 
-    - name: "linux_base | root SSH login is disabled"
+    - name: "Linux_base | root SSH login is disabled"
       ansible.builtin.assert:
         that:
-          - "'PermitRootLogin no' in (_sshd.content | b64decode)"
-          - "'PasswordAuthentication no' in (_sshd.content | b64decode)"
+          - "'PermitRootLogin no' in (linux_base_sshd.content | b64decode)"
+          - "'PasswordAuthentication no' in (linux_base_sshd.content | b64decode)"
         fail_msg: "sshd hardening was not applied"
 
-    - name: "linux_base | sudoers drop-in exists"
+    - name: "Linux_base | sudoers drop-in exists"
       ansible.builtin.stat:
         path: /etc/sudoers.d/10-ansible-groups
-      register: _sudoers
+      register: linux_base_sudoers
 
-    - name: "linux_base | sudoers drop-in is present and 0440"
+    - name: "Linux_base | sudoers drop-in is present and 0440"
       ansible.builtin.assert:
         that:
-          - _sudoers.stat.exists
-          - _sudoers.stat.mode == '0440'
+          - linux_base_sudoers.stat.exists
+          - linux_base_sudoers.stat.mode == '0440'
         fail_msg: "sudoers drop-in missing or wrong permissions"

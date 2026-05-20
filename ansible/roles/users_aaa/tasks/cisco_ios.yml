@@ -1,5 +1,5 @@
 ---
-- name: "users_aaa | cisco_ios | RADIUS servers"
+- name: "Users_aaa | cisco_ios | RADIUS servers"
   cisco.ios.ios_radius_server:
     config:
       hosts:
@@ -11,7 +11,7 @@
     label: "{{ item.host }}"
   no_log: true
 
-- name: "users_aaa | cisco_ios | AAA + 802.1X"
+- name: "Users_aaa | cisco_ios | AAA + 802.1X"
   cisco.ios.ios_config:
     lines:
       - aaa new-model

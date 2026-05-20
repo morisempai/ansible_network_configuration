@@ -6,7 +6,7 @@
     # The converge step above fails the scenario if the role errors, so
     # reaching this play already proves the role loads and dispatches.
     # Extend with real state assertions — see docs/adding-a-role.md.
-    - name: "l3_routing | role converged without error"
+    - name: "L3_routing | role converged without error"
       ansible.builtin.assert:
         that:
           - true

@@ -1,5 +1,5 @@
 ---
-- name: "qos_voip | fortios | traffic shaper for voice"
+- name: "Qos_voip | fortios | traffic shaper for voice"
   fortinet.fortios.fortios_firewall_shaper_trafficshaper:
     vdom: root
     state: present

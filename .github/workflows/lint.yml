@@ -35,10 +35,9 @@ jobs:
         run: ansible-lint -c .ansible-lint ansible/
 
       - name: Syntax-check all playbooks
-        working-directory: ansible
         run: |
-          for pb in playbooks/*.yml; do
+          for pb in ansible/playbooks/*.yml; do
             echo "::group::syntax-check $pb"
-            ansible-playbook -i inventory/lab/hosts.yml "$pb" --syntax-check
+            ansible-playbook -i ansible/inventory/lab/hosts.yml "$pb" --syntax-check
             echo "::endgroup::"
           done

@@ -1,5 +1,5 @@
 ---
-- name: "users_aaa | srlinux | AAA RADIUS server group"
+- name: "Users_aaa | srlinux | AAA RADIUS server group"
   nokia.srlinux.config:
     update:
       - path: /system/aaa/server-group[name=radius]

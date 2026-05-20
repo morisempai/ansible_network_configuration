@@ -1,5 +1,5 @@
 ---
-- name: "interfaces | fortios | configure interfaces"
+- name: "Interfaces | fortios | configure interfaces"
   fortinet.fortios.fortios_system_interface:
     vdom: root
     state: present

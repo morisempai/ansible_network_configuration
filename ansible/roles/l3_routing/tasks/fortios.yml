@@ -1,5 +1,5 @@
 ---
-- name: "l3_routing | fortios | static routes"
+- name: "L3_routing | fortios | static routes"
   fortinet.fortios.fortios_router_static:
     vdom: root
     state: present

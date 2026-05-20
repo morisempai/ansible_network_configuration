@@ -4,7 +4,7 @@
 # Missing implementations are silently skipped (errors='ignore'), so a role
 # that does not target every vendor still lints and runs.
 
-- name: "common | include vendor task file"
+- name: "Common | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
   vars:
     _vendor_map:

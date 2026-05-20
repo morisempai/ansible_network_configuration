@@ -3,10 +3,10 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: "windows_ad | AD-Domain-Services feature is installed"
+    - name: "Windows_ad | AD-Domain-Services feature is installed"
       ansible.windows.win_feature:
         name: AD-Domain-Services
         state: present
       check_mode: true
-      register: _ad_feature
-      failed_when: _ad_feature is changed
+      register: windows_ad_feature_check
+      failed_when: windows_ad_feature_check is changed

@@ -1,5 +1,5 @@
 ---
-- name: "acl_firewall | cisco_ios | extended ACL allow-list"
+- name: "Acl_firewall | cisco_ios | extended ACL allow-list"
   cisco.ios.ios_acls:
     config:
       - afi: ipv4

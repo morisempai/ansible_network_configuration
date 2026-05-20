@@ -1,5 +1,5 @@
 ---
-- name: "l3_routing | frr | static routes and OSPF"
+- name: "L3_routing | frr | static routes and OSPF"
   ansible.netcommon.cli_config:
     config: |
       {% for r in l3_routing_static %}

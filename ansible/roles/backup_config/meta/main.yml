@@ -5,6 +5,4 @@ galaxy_info:
   description: Pull running-config from network devices for rollback insurance.
   license: MIT
   min_ansible_version: "2.16"
-  platforms:
-    - name: Any
 dependencies: []

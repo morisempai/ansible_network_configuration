@@ -1,6 +1,6 @@
 ---
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
-- name: "acl_firewall | include vendor task file"
+- name: "Acl_firewall | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
   vars:
     _vendor_map:

@@ -39,8 +39,8 @@ and FortiGate, neither of which speak OpenConfig cleanly.
 ├── .github/
 │   ├── workflows/             # lint, molecule, lab CI pipelines
 │   └── PULL_REQUEST_TEMPLATE.md
+├── ansible.cfg                # run all ansible commands from the repo root
 ├── ansible/
-│   ├── ansible.cfg
 │   ├── requirements.yml       # Ansible collections
 │   ├── requirements.txt       # Python dependencies
 │   ├── inventory/

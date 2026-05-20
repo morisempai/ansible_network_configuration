@@ -3,44 +3,44 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: "common | chrony is installed"
+    - name: "Common | chrony is installed"
       ansible.builtin.package:
         name: chrony
         state: present
       check_mode: true
-      register: _chrony
-      failed_when: _chrony is changed
+      register: common_chrony
+      failed_when: common_chrony is changed
 
-    - name: "common | read chrony.conf"
+    - name: "Common | read chrony.conf"
       ansible.builtin.slurp:
         src: /etc/chrony/chrony.conf
-      register: _chrony_conf
+      register: common_chrony_conf
 
-    - name: "common | chrony.conf points at the configured NTP servers"
+    - name: "Common | chrony.conf points at the configured NTP servers"
       ansible.builtin.assert:
         that:
-          - "'10.0.10.10' in (_chrony_conf.content | b64decode)"
-          - "'10.0.10.11' in (_chrony_conf.content | b64decode)"
+          - "'10.0.10.10' in (common_chrony_conf.content | b64decode)"
+          - "'10.0.10.11' in (common_chrony_conf.content | b64decode)"
         fail_msg: "NTP servers missing from chrony.conf"
 
-    - name: "common | read resolv.conf"
+    - name: "Common | read resolv.conf"
       ansible.builtin.slurp:
         src: /etc/resolv.conf
-      register: _resolv
+      register: common_resolv
 
-    - name: "common | resolv.conf has the configured DNS servers"
+    - name: "Common | resolv.conf has the configured DNS servers"
       ansible.builtin.assert:
         that:
-          - "'10.0.10.20' in (_resolv.content | b64decode)"
+          - "'10.0.10.20' in (common_resolv.content | b64decode)"
         fail_msg: "DNS servers missing from resolv.conf"
 
-    - name: "common | MOTD banner is present"
+    - name: "Common | MOTD banner is present"
       ansible.builtin.slurp:
         src: /etc/motd
-      register: _motd
+      register: common_motd
 
-    - name: "common | banner content is non-empty"
+    - name: "Common | banner content is non-empty"
       ansible.builtin.assert:
         that:
-          - (_motd.content | b64decode | trim) | length > 0
+          - (common_motd.content | b64decode | trim) | length > 0
         fail_msg: "MOTD banner was not written"

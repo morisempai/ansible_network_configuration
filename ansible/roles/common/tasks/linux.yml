@@ -1,14 +1,14 @@
 ---
-- name: "common | linux | set hostname"
+- name: "Common | linux | set hostname"
   ansible.builtin.hostname:
     name: "{{ common_hostname }}"
 
-- name: "common | linux | install chrony"
+- name: "Common | linux | install chrony"
   ansible.builtin.package:
     name: chrony
     state: present
 
-- name: "common | linux | configure chrony servers"
+- name: "Common | linux | configure chrony servers"
   ansible.builtin.copy:
     dest: /etc/chrony/chrony.conf
     mode: "0644"
@@ -19,9 +19,9 @@
       driftfile /var/lib/chrony/drift
       makestep 1.0 3
       rtcsync
-  notify: restart chrony
+  notify: Restart chrony
 
-- name: "common | linux | configure resolv.conf"
+- name: "Common | linux | configure resolv.conf"
   ansible.builtin.copy:
     dest: /etc/resolv.conf
     mode: "0644"
@@ -35,7 +35,7 @@
       nameserver {{ d }}
       {% endfor %}
 
-- name: "common | linux | configure rsyslog forwarding"
+- name: "Common | linux | configure rsyslog forwarding"
   ansible.builtin.copy:
     dest: /etc/rsyslog.d/10-forward.conf
     mode: "0644"
@@ -43,10 +43,10 @@
       {% for s in common_syslog_servers %}
       *.* @@{{ s.host }}:{{ s.port | default(514) }}
       {% endfor %}
-  notify: restart rsyslog
+  notify: Restart rsyslog
   when: common_syslog_servers | length > 0
 
-- name: "common | linux | MOTD banner"
+- name: "Common | linux | MOTD banner"
   ansible.builtin.copy:
     dest: /etc/motd
     mode: "0644"

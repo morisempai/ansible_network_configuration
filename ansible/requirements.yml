@@ -12,7 +12,6 @@ collections:
 
   # Nokia (lab + future production)
   - name: nokia.srlinux
-    version: ">=0.4.0"
 
   # Generic networking helpers
   - name: ansible.netcommon
@@ -23,6 +22,8 @@ collections:
   # Linux / Windows
   - name: ansible.posix
     version: ">=1.5.0"
+  - name: ansible.windows
+    version: ">=2.0.0"
   - name: community.general
     version: ">=9.0.0"
   - name: community.windows
@@ -32,10 +33,6 @@ collections:
 
   # Inventory / monitoring
   - name: netbox.netbox
-    version: ">=3.20.0"
+    version: ">=3.0.0"
   - name: community.zabbix
     version: ">=3.0.0"
-
-  # Server out-of-band
-  - name: hpe.ilo
-    version: ">=1.2.0"
