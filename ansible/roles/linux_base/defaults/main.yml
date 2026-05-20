@@ -1,0 +1,7 @@
+---
+linux_base_disable_root_ssh: true
+linux_base_password_auth: false
+linux_base_allow_sudo_groups:
+  - sudo
+linux_base_install_zabbix_agent: false
+linux_base_zabbix_server: 127.0.0.1

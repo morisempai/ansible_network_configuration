@@ -1,0 +1,14 @@
+---
+- name: "Vlans | fortios | VLAN sub-interfaces"
+  fortinet.fortios.fortios_system_interface:
+    vdom: root
+    state: present
+    system_interface:
+      name: "vlan{{ item.id }}"
+      vlanid: "{{ item.id }}"
+      type: vlan
+      interface: "{{ fortios_vlan_parent | default('lan') }}"
+      description: "{{ item.name }}"
+  loop: "{{ vlans_config }}"
+  loop_control:
+    label: "{{ item.id }}"

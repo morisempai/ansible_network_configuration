@@ -1,0 +1,9 @@
+---
+galaxy_info:
+  role_name: l3_routing
+  namespace: examplecorp
+  author: ExampleCorp Network Ops
+  description: SVIs, static routes and dynamic routing for L3 devices.
+  license: MIT
+  min_ansible_version: "2.16"
+dependencies: []

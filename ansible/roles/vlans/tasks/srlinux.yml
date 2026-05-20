@@ -1,0 +1,11 @@
+---
+- name: "Vlans | srlinux | network-instance per VLAN (mac-vrf)"
+  nokia.srlinux.config:
+    update:
+      - path: "/network-instance[name=vlan-{{ item.id }}]"
+        value:
+          type: mac-vrf
+          description: "{{ item.name }}"
+  loop: "{{ vlans_config }}"
+  loop_control:
+    label: "{{ item.id }}"

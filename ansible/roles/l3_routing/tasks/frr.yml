@@ -1,0 +1,13 @@
+---
+- name: "L3_routing | frr | static routes and OSPF"
+  ansible.netcommon.cli_config:
+    config: |
+      {% for r in l3_routing_static %}
+      ip route {{ r.prefix }} {{ r.next_hop }}
+      {% endfor %}
+      {% if l3_routing_ospf %}
+      router ospf
+       {% for a in l3_routing_ospf.areas | default([]) %}
+       network {{ a.network }} area {{ a.area }}
+       {% endfor %}
+      {% endif %}

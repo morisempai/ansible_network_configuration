@@ -1,0 +1,12 @@
+---
+- name: "Interfaces | srlinux | configure interfaces"
+  nokia.srlinux.config:
+    update:
+      - path: "/interface[name={{ item.name }}]"
+        value:
+          admin-state: "{{ 'enable' if item.enabled | default(true) else 'disable' }}"
+          description: "{{ item.description | default(omit) }}"
+          mtu: "{{ item.mtu | default(omit) }}"
+  loop: "{{ interfaces_config }}"
+  loop_control:
+    label: "{{ item.name }}"

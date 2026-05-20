@@ -1,0 +1,12 @@
+---
+# NetBox source of truth for the l3_routing role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. SVIs, static
+# routes and the OSPF profile are routing intent with no native NetBox
+# model, so they come from the device's config context. See docs/netbox.md.
+- name: "L3_routing | netbox | resolve routing inputs from config context"
+  ansible.builtin.set_fact:
+    l3_routing_svis: "{{ config_context.l3_svis | default(l3_routing_svis) }}"
+    l3_routing_static: "{{ config_context.l3_static_routes | default(l3_routing_static) }}"
+    l3_routing_ospf: "{{ config_context.l3_ospf | default(l3_routing_ospf) }}"
+  when: config_context is defined

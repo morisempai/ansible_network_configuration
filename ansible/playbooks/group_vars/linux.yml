@@ -1,0 +1,16 @@
+---
+# Variables applied to every Linux host (hypervisors, jump host, monitoring).
+
+ansible_connection: ssh
+ansible_user: ansible
+
+# Hardening baseline.
+linux_base_disable_root_ssh: true
+linux_base_password_auth: false
+linux_base_allow_sudo_groups:
+  - ansible
+  - sysadmin
+
+# Monitoring agents.
+linux_base_install_zabbix_agent: true
+linux_base_zabbix_server: 10.0.10.30

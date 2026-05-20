@@ -1,0 +1,9 @@
+---
+galaxy_info:
+  role_name: users_aaa
+  namespace: examplecorp
+  author: ExampleCorp Network Ops
+  description: Local users and AAA (RADIUS/TACACS+, 802.1X RADIUS client).
+  license: MIT
+  min_ansible_version: "2.16"
+dependencies: []

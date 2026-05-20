@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  role_name: linux_base
+  namespace: examplecorp
+  author: ExampleCorp Network Ops
+  description: Base hardening and monitoring agent for Linux servers.
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: EL
+      versions: [all]
+    - name: Debian
+      versions: [all]
+    - name: Ubuntu
+      versions: [all]
+dependencies: []

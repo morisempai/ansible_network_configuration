@@ -1,0 +1,9 @@
+---
+- name: "Interfaces | frr | configure interfaces"
+  ansible.netcommon.cli_config:
+    config: |
+      {% for i in interfaces_config %}
+      interface {{ i.name }}
+       {{ 'no shutdown' if i.enabled | default(true) else 'shutdown' }}
+       {% if i.description is defined %}description {{ i.description }}{% endif %}
+      {% endfor %}

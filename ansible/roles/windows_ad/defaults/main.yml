@@ -1,0 +1,5 @@
+---
+windows_ad_domain: example.internal
+windows_ad_is_primary: false
+windows_ad_replica_of: ""
+# windows_ad_safe_mode_password comes from vault — no default on purpose.

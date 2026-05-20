@@ -1,0 +1,21 @@
+---
+- name: "Users_aaa | cisco_ios | RADIUS servers"
+  cisco.ios.ios_radius_server:
+    config:
+      hosts:
+        - name: "{{ item.host }}"
+          key: "{{ item.secret }}"
+          timeout: "{{ item.timeout | default(5) }}"
+  loop: "{{ users_aaa_servers }}"
+  loop_control:
+    label: "{{ item.host }}"
+  no_log: true
+
+- name: "Users_aaa | cisco_ios | AAA + 802.1X"
+  cisco.ios.ios_config:
+    lines:
+      - aaa new-model
+      - aaa authentication dot1x default group radius
+      - aaa authorization network default group radius
+      - dot1x system-auth-control
+  when: users_aaa_dot1x.enabled | bool

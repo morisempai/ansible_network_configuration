@@ -1,0 +1,46 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Common | chrony is installed"
+      ansible.builtin.package:
+        name: chrony
+        state: present
+      check_mode: true
+      register: common_chrony
+      failed_when: common_chrony is changed
+
+    - name: "Common | read chrony.conf"
+      ansible.builtin.slurp:
+        src: /etc/chrony/chrony.conf
+      register: common_chrony_conf
+
+    - name: "Common | chrony.conf points at the configured NTP servers"
+      ansible.builtin.assert:
+        that:
+          - "'10.0.10.10' in (common_chrony_conf.content | b64decode)"
+          - "'10.0.10.11' in (common_chrony_conf.content | b64decode)"
+        fail_msg: "NTP servers missing from chrony.conf"
+
+    - name: "Common | read resolv.conf"
+      ansible.builtin.slurp:
+        src: /etc/resolv.conf
+      register: common_resolv
+
+    - name: "Common | resolv.conf has the configured DNS servers"
+      ansible.builtin.assert:
+        that:
+          - "'10.0.10.20' in (common_resolv.content | b64decode)"
+        fail_msg: "DNS servers missing from resolv.conf"
+
+    - name: "Common | MOTD banner is present"
+      ansible.builtin.slurp:
+        src: /etc/motd
+      register: common_motd
+
+    - name: "Common | banner content is non-empty"
+      ansible.builtin.assert:
+        that:
+          - (common_motd.content | b64decode | trim) | length > 0
+        fail_msg: "MOTD banner was not written"

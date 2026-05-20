@@ -1,0 +1,9 @@
+---
+l3_routing_svis: []
+# - vlan_id: 40
+#   address: 10.0.40.1/22
+#   description: corp users gateway
+l3_routing_static: []
+# - prefix: 0.0.0.0/0
+#   next_hop: 10.0.90.1
+l3_routing_ospf: {}

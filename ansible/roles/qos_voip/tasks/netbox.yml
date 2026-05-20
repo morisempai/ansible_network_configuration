@@ -1,0 +1,10 @@
+---
+# NetBox source of truth for the qos_voip role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. The VoIP VLAN id
+# and DSCP marking come from the device's config context. See docs/netbox.md.
+- name: "Qos_voip | netbox | resolve QoS inputs from config context"
+  ansible.builtin.set_fact:
+    qos_voip_vlan_id: "{{ config_context.qos_voip_vlan | default(qos_voip_vlan_id) }}"
+    qos_voip_marking: "{{ config_context.qos_voip_dscp | default(qos_voip_marking) }}"
+  when: config_context is defined

@@ -1,0 +1,19 @@
+---
+# NetBox source of truth for the linux_base role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. The hardening and
+# monitoring settings come from the device's config context. See
+# docs/netbox.md.
+- name: "Linux_base | netbox | resolve hardening inputs from config context"
+  ansible.builtin.set_fact:
+    linux_base_disable_root_ssh: >-
+      {{ config_context.linux_base_disable_root_ssh | default(linux_base_disable_root_ssh) }}
+    linux_base_password_auth: >-
+      {{ config_context.linux_base_password_auth | default(linux_base_password_auth) }}
+    linux_base_allow_sudo_groups: >-
+      {{ config_context.linux_base_allow_sudo_groups | default(linux_base_allow_sudo_groups) }}
+    linux_base_install_zabbix_agent: >-
+      {{ config_context.linux_base_install_zabbix_agent | default(linux_base_install_zabbix_agent) }}
+    linux_base_zabbix_server: >-
+      {{ config_context.linux_base_zabbix_server | default(linux_base_zabbix_server) }}
+  when: config_context is defined

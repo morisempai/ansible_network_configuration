@@ -1,0 +1,8 @@
+---
+users_aaa_servers: "{{ aaa_servers | default([]) }}"
+users_aaa_dot1x: "{{ dot1x | default({'enabled': false}) }}"
+
+# Break-glass local accounts. Passwords/hashes come from vault.
+users_aaa_local:
+  - name: netadmin
+    role: admin

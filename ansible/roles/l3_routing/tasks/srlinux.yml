@@ -1,0 +1,10 @@
+---
+- name: "L3_routing | srlinux | static routes (default network-instance)"
+  nokia.srlinux.config:
+    update:
+      - path: "/network-instance[name=default]/static-routes/route[prefix={{ item.prefix }}]"
+        value:
+          next-hop-group: "nhg-{{ item.next_hop }}"
+  loop: "{{ l3_routing_static }}"
+  loop_control:
+    label: "{{ item.prefix }}"

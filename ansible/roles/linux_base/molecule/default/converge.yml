@@ -1,0 +1,25 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  pre_tasks:
+    # update_cache is required: the test image ships with an empty apt cache.
+    # cache_valid_time keeps the idempotence pass from re-updating the cache.
+    - name: "Refresh apt cache and ensure openssh-server is present"
+      ansible.builtin.apt:
+        name: openssh-server
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    # `sshd -t` (used by the role's lineinfile validate) needs the privilege
+    # separation directory, which only exists once sshd has run.
+    - name: "Ensure the sshd privilege-separation directory exists"
+      ansible.builtin.file:
+        path: /run/sshd
+        state: directory
+        mode: "0755"
+  tasks:
+    - name: "Apply the linux_base role"
+      ansible.builtin.include_role:
+        name: linux_base

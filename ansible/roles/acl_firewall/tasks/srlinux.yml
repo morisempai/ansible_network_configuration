@@ -1,0 +1,17 @@
+---
+- name: "Acl_firewall | srlinux | IPv4 ACL entries"
+  nokia.srlinux.config:
+    update:
+      - path: "/acl/ipv4-filter[name=inter-vlan]/entry[sequence-id={{ (idx + 1) * 10 }}]"
+        value:
+          action:
+            "{{ 'accept' if item.action == 'allow' else 'drop' }}": {}
+          match:
+            source-ip:
+              prefix: "{{ item.src }}"
+            destination-ip:
+              prefix: "{{ item.dst }}"
+  loop: "{{ acl_firewall_rules }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.name }}"

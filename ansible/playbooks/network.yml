@@ -1,0 +1,23 @@
+---
+# Apply network roles to every network device. Roles dispatch internally by
+# ansible_network_os.
+
+- name: Apply network device baseline + topology
+  hosts: network
+  gather_facts: false
+  roles:
+    - role: common
+      tags: [common, baseline]
+    - role: users_aaa
+      tags: [aaa, security]
+    - role: interfaces
+      tags: [interfaces]
+    - role: vlans
+      tags: [vlans]
+    - role: l3_routing
+      tags: [routing]
+      when: "'l3' in group_names"
+    - role: acl_firewall
+      tags: [acl, security]
+    - role: qos_voip
+      tags: [qos, voip]

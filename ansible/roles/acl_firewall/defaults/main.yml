@@ -1,0 +1,8 @@
+---
+acl_firewall_default_action: "{{ acl_default_action | default('deny') }}"
+acl_firewall_rules: []
+# - name: corp-to-servers-https
+#   src: 10.0.40.0/22
+#   dst: 10.0.20.0/24
+#   service: tcp/443
+#   action: allow

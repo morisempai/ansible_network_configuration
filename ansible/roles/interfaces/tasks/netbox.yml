@@ -1,0 +1,18 @@
+---
+# NetBox source of truth for the interfaces role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. Interfaces are
+# native NetBox DCIM objects, queried directly with nb_lookup for this
+# device. NetBox interface 'mode' (access / tagged / tagged-all) is passed
+# through unchanged. Overrides interfaces_config; see docs/netbox.md.
+- name: "Interfaces | netbox | resolve interfaces from NetBox DCIM"
+  ansible.builtin.set_fact:
+    interfaces_config: >-
+      {{ query('netbox.netbox.nb_lookup', 'interfaces',
+               api_endpoint=netbox_url,
+               token=netbox_token,
+               validate_certs=netbox_validate_certs,
+               api_filter='device=' ~ inventory_hostname)
+         | community.general.json_query('[].value.{name: name,
+           description: description, enabled: enabled, mtu: mtu,
+           mode: mode.value, trunk_vlans: tagged_vlans[].vid}') }}

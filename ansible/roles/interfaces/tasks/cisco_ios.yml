@@ -1,0 +1,26 @@
+---
+- name: "Interfaces | cisco_ios | base interface attributes"
+  cisco.ios.ios_interfaces:
+    config:
+      - name: "{{ item.name }}"
+        description: "{{ item.description | default(omit) }}"
+        enabled: "{{ item.enabled | default(true) }}"
+        mtu: "{{ item.mtu | default(omit) }}"
+    state: merged
+  loop: "{{ interfaces_config }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: "Interfaces | cisco_ios | L2 mode"
+  cisco.ios.ios_l2_interfaces:
+    config:
+      - name: "{{ item.name }}"
+        mode: "{{ item.mode | default('access') }}"
+        access:
+          vlan: "{{ item.access_vlan | default(omit) }}"
+        trunk:
+          allowed_vlans: "{{ item.trunk_vlans | default(omit) }}"
+    state: merged
+  loop: "{{ interfaces_config | selectattr('mode', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.name }}"

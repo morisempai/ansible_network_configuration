@@ -1,0 +1,9 @@
+---
+galaxy_info:
+  role_name: backup_config
+  namespace: examplecorp
+  author: ExampleCorp Network Ops
+  description: Pull running-config from network devices for rollback insurance.
+  license: MIT
+  min_ansible_version: "2.16"
+dependencies: []

@@ -1,0 +1,53 @@
+---
+- name: "Common | linux | set hostname"
+  ansible.builtin.hostname:
+    name: "{{ common_hostname }}"
+
+- name: "Common | linux | install chrony"
+  ansible.builtin.package:
+    name: chrony
+    state: present
+
+- name: "Common | linux | configure chrony servers"
+  ansible.builtin.copy:
+    dest: /etc/chrony/chrony.conf
+    mode: "0644"
+    content: |
+      {% for s in common_ntp_servers %}
+      server {{ s }} iburst
+      {% endfor %}
+      driftfile /var/lib/chrony/drift
+      makestep 1.0 3
+      rtcsync
+  notify: Restart chrony
+
+- name: "Common | linux | configure resolv.conf"
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    mode: "0644"
+    # /etc/resolv.conf is a bind mount inside containers; write in place so
+    # the role converges in Docker-based Molecule scenarios as well as on
+    # real hosts.
+    unsafe_writes: true
+    content: |
+      search {{ org_domain | default('localdomain') }}
+      {% for d in common_dns_servers %}
+      nameserver {{ d }}
+      {% endfor %}
+
+- name: "Common | linux | configure rsyslog forwarding"
+  ansible.builtin.copy:
+    dest: /etc/rsyslog.d/10-forward.conf
+    mode: "0644"
+    content: |
+      {% for s in common_syslog_servers %}
+      *.* @@{{ s.host }}:{{ s.port | default(514) }}
+      {% endfor %}
+  notify: Restart rsyslog
+  when: common_syslog_servers | length > 0
+
+- name: "Common | linux | MOTD banner"
+  ansible.builtin.copy:
+    dest: /etc/motd
+    mode: "0644"
+    content: "{{ common_banner }}"

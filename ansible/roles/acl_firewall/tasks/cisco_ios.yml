@@ -1,0 +1,12 @@
+---
+- name: "Acl_firewall | cisco_ios | extended ACL allow-list"
+  cisco.ios.ios_acls:
+    config:
+      - afi: ipv4
+        acls:
+          - name: INTER_VLAN
+            acl_type: extended
+            aces:
+              "{{ acl_firewall_rules | map('community.general.dict_kv', 'grant') | list }}"
+    state: merged
+  when: acl_firewall_rules | length > 0

@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Apply the windows_ad role"
+      ansible.builtin.include_role:
+        name: windows_ad
+      vars:
+        windows_ad_safe_mode_password: "{{ lookup('env', 'MOLECULE_AD_SAFE_MODE_PW') | default('Lab-DSRM-Pw1!', true) }}"

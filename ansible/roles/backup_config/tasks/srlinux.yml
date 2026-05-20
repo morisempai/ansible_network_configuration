@@ -1,0 +1,15 @@
+---
+- name: "Backup_config | srlinux | fetch running config"
+  nokia.srlinux.get:
+    paths:
+      - path: /
+        datastore: running
+  register: backup_config_srl_running
+
+- name: "Backup_config | srlinux | write config to file"
+  ansible.builtin.copy:
+    dest: >-
+      {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.json
+    content: "{{ backup_config_srl_running.result | to_nice_json }}"
+    mode: "0640"
+  delegate_to: localhost

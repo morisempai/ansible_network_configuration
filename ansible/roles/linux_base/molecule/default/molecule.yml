@@ -1,0 +1,35 @@
+---
+# Molecule scenario for the 'linux_base' role.
+#
+# linux_base is a Linux-only role, so this scenario fully converges and
+# verifies real state on a Debian test container.
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: ansnet-linux-base-debian
+    image: geerlingguy/docker-debian12-ansible:latest
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    pre_build_image: true
+provisioner:
+  name: ansible
+  # The role under test lives in ansible/roles/<name>, not at the repo
+  # root, so put the roles directory on Ansible's role search path.
+  env:
+    ANSIBLE_ROLES_PATH: "${MOLECULE_PROJECT_DIRECTORY}/.."
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks
+  inventory:
+    group_vars:
+      all:
+        linux_base_disable_root_ssh: true
+        linux_base_password_auth: false
+        linux_base_install_zabbix_agent: false
+verifier:
+  name: ansible

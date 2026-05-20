@@ -1,0 +1,49 @@
+# Containerlab topology for the ansnet test lab.
+# Miniature of the HQ + R1 + R2 estate using only container images that run
+# on GitHub-hosted runners (no nested virtualisation, no licensed images).
+#
+#   ./lab/deploy.sh up      # deploy
+#   ./lab/deploy.sh down    # destroy
+#
+# Node names are prefixed clab-ansnet-<node> by Containerlab; the Ansible
+# inventory at ansible/inventory/lab/hosts.yml matches those names.
+---
+name: ansnet
+
+topology:
+  kinds:
+    nokia_srlinux:
+      image: ghcr.io/nokia/srlinux:latest
+    linux:
+      image: quay.io/frrouting/frr:latest
+
+  nodes:
+    # --- HQ ---
+    hq-core:
+      kind: nokia_srlinux
+      type: ixrd2l
+      group: hq
+    hq-access:
+      kind: linux
+      group: hq
+    hq-linux01:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool:latest
+      group: hq
+
+    # --- Regional site 1 ---
+    r1-edge:
+      kind: nokia_srlinux
+      type: ixrd2l
+      group: r1
+
+    # --- Regional site 2 ---
+    r2-edge:
+      kind: linux
+      group: r2
+
+  links:
+    - endpoints: ["hq-core:e1-1", "hq-access:eth1"]
+    - endpoints: ["hq-core:e1-2", "hq-linux01:eth1"]
+    - endpoints: ["hq-core:e1-3", "r1-edge:e1-1"]
+    - endpoints: ["hq-core:e1-4", "r2-edge:eth1"]

@@ -1,0 +1,9 @@
+---
+# Default: no interfaces. Real values come from NetBox or host_vars.
+interfaces_config: []
+# - name: ethernet-1/1
+#   description: example
+#   enabled: true
+#   mtu: 9100
+#   mode: trunk
+#   trunk_vlans: [10, 20, 40]

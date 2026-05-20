@@ -1,0 +1,37 @@
+---
+- name: "Linux_base | harden sshd"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    validate: "sshd -t -f %s"
+  loop:
+    - regexp: '^#?PermitRootLogin'
+      line: "PermitRootLogin {{ 'no' if linux_base_disable_root_ssh else 'yes' }}"
+    - regexp: '^#?PasswordAuthentication'
+      line: "PasswordAuthentication {{ 'yes' if linux_base_password_auth else 'no' }}"
+  notify: Restart sshd
+
+- name: "Linux_base | restrict sudo to approved groups"
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/10-ansible-groups
+    mode: "0440"
+    validate: "visudo -cf %s"
+    content: |
+      {% for g in linux_base_allow_sudo_groups %}
+      %{{ g }} ALL=(ALL) ALL
+      {% endfor %}
+
+- name: "Linux_base | install zabbix agent"
+  ansible.builtin.package:
+    name: zabbix-agent2
+    state: present
+  when: linux_base_install_zabbix_agent | bool
+
+- name: "Linux_base | point zabbix agent at server"
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_agent2.conf
+    regexp: '^Server='
+    line: "Server={{ linux_base_zabbix_server }}"
+  notify: Restart zabbix agent
+  when: linux_base_install_zabbix_agent | bool

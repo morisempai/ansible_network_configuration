@@ -1,0 +1,10 @@
+---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "Windows_ad | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
+# Windows-only role: no vendor dispatch needed.
+- name: "Windows_ad | apply Windows AD configuration"
+  ansible.builtin.include_tasks: windows.yml

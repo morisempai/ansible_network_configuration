@@ -1,0 +1,28 @@
+---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "Vlans | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
+# Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
+- name: "Vlans | include vendor task file"
+  ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
+  vars:
+    _vendor_map:
+      cisco.ios.ios: cisco_ios.yml
+      cisco.nxos.nxos: cisco_nxos.yml
+      nokia.srlinux.srlinux: srlinux.yml
+      frr.frr.frr: frr.yml
+      fortinet.fortios.fortios: fortios.yml
+    _candidates:
+      - "{{ _vendor_map[ansible_network_os | default('none')] | default('') }}"
+      - "{{ ansible_os_family | default('') | lower }}.yml"
+      - "linux.yml"
+    _vendor_task_file: >-
+      {{ lookup('ansible.builtin.first_found',
+                _candidates | select | list, errors='ignore',
+                paths=[role_path + '/tasks']) }}
+  when:
+    - _vendor_task_file | length > 0
+    - vlans_config | length > 0

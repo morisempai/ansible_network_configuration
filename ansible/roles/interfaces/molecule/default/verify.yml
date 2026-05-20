@@ -1,0 +1,14 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    # The converge step above fails the scenario if the role errors, so
+    # reaching this play already proves the role loads and dispatches.
+    # Extend with real state assertions — see docs/adding-a-role.md.
+    - name: "Interfaces | role converged without error"
+      ansible.builtin.assert:
+        that:
+          - true
+        success_msg: "'interfaces' role applied cleanly on the test host."
+        fail_msg: "'interfaces' role verification failed."

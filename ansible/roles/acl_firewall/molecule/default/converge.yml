@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Apply the acl_firewall role"
+      ansible.builtin.include_role:
+        name: acl_firewall

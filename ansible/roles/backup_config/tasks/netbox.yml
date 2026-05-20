@@ -1,0 +1,13 @@
+---
+# NetBox source of truth for the backup_config role.
+#
+# Included by tasks/main.yml when netbox_enabled is true. backup_config is
+# an output role with no device config to source from NetBox, but its
+# behaviour (destination directory, git push) can be centrally overridden
+# from the device's config context. See docs/netbox.md.
+- name: "Backup_config | netbox | resolve backup settings from config context"
+  ansible.builtin.set_fact:
+    backup_config_dir: "{{ config_context.backup_config_dir | default(backup_config_dir) }}"
+    backup_config_git_push: >-
+      {{ config_context.backup_config_git_push | default(backup_config_git_push) }}
+  when: config_context is defined

@@ -1,0 +1,11 @@
+---
+# Resolve role inputs from NetBox (the source of truth) before applying
+# the role — skipped unless netbox_enabled is set. See docs/netbox.md.
+- name: "Linux_base | resolve inputs from NetBox"
+  ansible.builtin.include_tasks: netbox.yml
+  when: netbox_enabled | default(false) | bool
+
+# Linux-only role: no vendor dispatch needed, but the file name keeps parity
+# with the dispatcher convention used by network roles.
+- name: "Linux_base | apply Linux baseline"
+  ansible.builtin.include_tasks: linux.yml

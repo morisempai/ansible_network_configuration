@@ -1,0 +1,13 @@
+---
+- name: "Users_aaa | fortios | RADIUS servers"
+  fortinet.fortios.fortios_user_radius:
+    vdom: root
+    user_radius:
+      name: "radius-{{ item.host }}"
+      server: "{{ item.host }}"
+      secret: "{{ item.secret }}"
+      timeout: "{{ item.timeout | default(5) }}"
+  loop: "{{ users_aaa_servers }}"
+  loop_control:
+    label: "{{ item.host }}"
+  no_log: true

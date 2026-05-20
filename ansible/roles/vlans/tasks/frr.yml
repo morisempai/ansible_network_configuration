@@ -1,0 +1,6 @@
+---
+# FRR is L3-only; VLANs on a Linux switch are kernel bridge VLANs, configured
+# by the host network stack, not FRR. Stub keeps the dispatch contract intact.
+- name: "Vlans | frr | VLANs are kernel bridge objects (no-op)"
+  ansible.builtin.debug:
+    msg: "VLANs on FRR/Linux hosts are managed by linux_base bridge config."

@@ -1,0 +1,19 @@
+---
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - ansible/collections/
+  - molecule/*/.molecule/
+  - tests/
+
+skip_list:
+  - role-name  # we use snake_case role names matching the file system
+
+warn_list:
+  - experimental
+  - fqcn[action-core]  # waved through for ansible.builtin during scaffold phase
+
+use_default_rules: true
+verbosity: 1

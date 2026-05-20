@@ -1,0 +1,21 @@
+---
+# NetBox dynamic inventory — staging instance.
+# Token lives in $NETBOX_TOKEN (loaded from CI secrets / local vault).
+
+plugin: netbox.netbox.nb_inventory
+api_endpoint: "https://netbox-staging.example.internal"
+validate_certs: true
+# config_context is merged into hostvars and is the source of truth for
+# role data without a native NetBox model (ACLs, QoS, AAA, ...).
+config_context: true
+group_by:
+  - device_roles
+  - sites
+  - manufacturers
+  - platforms
+  - tags
+device_query_filters:
+  - status: active
+compose:
+  ansible_network_os: platform.slug
+  ansible_host: primary_ip4.address | regex_replace('/.*', '')

@@ -1,0 +1,13 @@
+---
+- name: "Backup_config | frr | fetch running config"
+  ansible.netcommon.cli_command:
+    command: show running-config
+  register: backup_config_frr_running
+
+- name: "Backup_config | frr | write config to file"
+  ansible.builtin.copy:
+    dest: >-
+      {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.cfg
+    content: "{{ backup_config_frr_running.stdout }}"
+    mode: "0640"
+  delegate_to: localhost

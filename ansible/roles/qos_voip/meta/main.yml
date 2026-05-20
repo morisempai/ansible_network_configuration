@@ -1,0 +1,9 @@
+---
+galaxy_info:
+  role_name: qos_voip
+  namespace: examplecorp
+  author: ExampleCorp Network Ops
+  description: QoS classification and priority queuing for the VoIP VLAN.
+  license: MIT
+  min_ansible_version: "2.16"
+dependencies: []
