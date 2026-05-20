@@ -1,0 +1,33 @@
+---
+# Variables applied to every host across every site.
+
+# Org / branding
+org_name: "ExampleCorp"
+org_domain: "example.internal"
+
+# Time / DNS / syslog — all on management VLAN.
+ntp_servers:
+  - 10.0.10.10
+  - 10.0.10.11
+
+dns_servers:
+  - 10.0.10.20
+  - 10.0.10.21
+
+syslog_servers:
+  - host: 10.0.10.30
+    port: 514
+    proto: udp
+
+# SNMP read-only for monitoring (Zabbix).
+snmp_v3:
+  user: zabbix-ro
+  auth_proto: SHA
+  priv_proto: AES128
+  # Auth/priv passphrases live in vault, never here.
+
+# Login banner shown on console and SSH.
+login_banner: |
+  ###############################################################
+  #  Authorised access only. All activity is logged and audited. #
+  ###############################################################

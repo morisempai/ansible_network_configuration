@@ -1,0 +1,5 @@
+---
+# Linux-only role: no vendor dispatch needed, but the file name keeps parity
+# with the dispatcher convention used by network roles.
+- name: "linux_base | apply Linux baseline"
+  ansible.builtin.include_tasks: linux.yml

@@ -1,0 +1,6 @@
+---
+# FRR has no RADIUS integration of its own; AAA on a Linux-based switch is
+# handled by PAM. This stub keeps the dispatch contract satisfied.
+- name: "users_aaa | frr | AAA handled by host PAM (no-op)"
+  ansible.builtin.debug:
+    msg: "FRR AAA is delegated to host PAM; see roles/linux_base."

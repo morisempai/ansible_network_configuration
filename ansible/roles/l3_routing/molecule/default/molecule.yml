@@ -1,0 +1,32 @@
+---
+# Molecule scenario for the 'l3_routing' role.
+#
+# What this scenario covers (CI, every PR):
+#   - the role loads and its defaults parse
+#   - the vendor dispatcher resolves correctly
+#   - the Linux implementation, if the role has one
+#
+# What it does NOT cover: Cisco IOS / FortiGate / SR Linux device paths.
+# Those are exercised against the Containerlab lab — see docs/lab.md and the
+# 'lab-integration' GitHub workflow. On a plain Linux test host a network-only
+# role correctly resolves to a no-op; that is the expected result here.
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: ansnet-l3_routing-debian
+    image: geerlingguy/docker-debian12-ansible:latest
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    pre_build_image: true
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks
+verifier:
+  name: ansible

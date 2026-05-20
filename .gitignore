@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.tox/
+
+# Ansible
+*.retry
+.ansible/
+ansible/collections/
+ansible/.galaxy_cache/
+
+# Molecule
+.cache/
+molecule/*/.molecule/
+
+# Containerlab artifacts
+clab-*/
+*.clab.yml.bak
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Claude Code per-project settings
+.claude/
+
+# Local-only inventory / secrets
+*.local.yml
+*.local.yaml
+vault-password*
+.env

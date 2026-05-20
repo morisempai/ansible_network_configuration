@@ -1,0 +1,10 @@
+---
+- name: "users_aaa | srlinux | AAA RADIUS server group"
+  nokia.srlinux.config:
+    update:
+      - path: /system/aaa/server-group[name=radius]
+        value:
+          type: radius
+          server:
+            "{{ users_aaa_servers | map('community.general.dict_kv', 'address') | list }}"
+  no_log: true

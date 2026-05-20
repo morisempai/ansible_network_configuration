@@ -1,0 +1,13 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  pre_tasks:
+    - name: "Ensure openssh-server is present so sshd_config exists"
+      ansible.builtin.package:
+        name: openssh-server
+        state: present
+  tasks:
+    - name: "Apply the linux_base role"
+      ansible.builtin.include_role:
+        name: linux_base

@@ -1,0 +1,71 @@
+---
+name: molecule
+
+on:
+  pull_request:
+
+jobs:
+  molecule:
+    name: "molecule: ${{ matrix.role }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # windows_ad is intentionally excluded — it needs a Windows host.
+        # See ansible/roles/windows_ad/molecule/default/molecule.yml and the
+        # 'molecule-windows' job below.
+        role:
+          - common
+          - users_aaa
+          - interfaces
+          - vlans
+          - l3_routing
+          - acl_firewall
+          - qos_voip
+          - linux_base
+          - backup_config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ansible/requirements.txt
+
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: molecule test
+        working-directory: ansible/roles/${{ matrix.role }}
+        run: molecule test
+
+  molecule-windows:
+    name: "molecule: windows_ad"
+    runs-on: windows-latest
+    # Placeholder: the windows_ad scenario uses the delegated driver and needs
+    # a reachable Windows host. Until a self-hosted AD test box is wired up,
+    # this job only validates that the role and scenario parse.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible
+        run: pip install ansible-core ansible-lint
+
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Lint the windows_ad role
+        run: ansible-lint -c .ansible-lint ansible/roles/windows_ad

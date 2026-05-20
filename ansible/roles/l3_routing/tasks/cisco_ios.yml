@@ -1,0 +1,25 @@
+---
+- name: "l3_routing | cisco_ios | SVIs"
+  cisco.ios.ios_l3_interfaces:
+    config:
+      - name: "Vlan{{ item.vlan_id }}"
+        ipv4:
+          - address: "{{ item.address }}"
+    state: merged
+  loop: "{{ l3_routing_svis }}"
+  loop_control:
+    label: "Vlan{{ item.vlan_id }}"
+
+- name: "l3_routing | cisco_ios | static routes"
+  cisco.ios.ios_static_routes:
+    config:
+      - address_families:
+          - afi: ipv4
+            routes:
+              - dest: "{{ item.prefix }}"
+                next_hops:
+                  - forward_router_address: "{{ item.next_hop }}"
+    state: merged
+  loop: "{{ l3_routing_static }}"
+  loop_control:
+    label: "{{ item.prefix }}"

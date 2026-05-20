@@ -1,0 +1,17 @@
+---
+# Phase 0 bootstrap. Runs once from an external host to bring up the minimal
+# management plane: jump host, NetBox, GitLab, AWX. Steady-state playbooks
+# (site.yml et al.) take over once this is done.
+#
+# This playbook uses a static inventory, not NetBox — by definition NetBox
+# does not exist yet when this runs.
+
+- name: Bootstrap management plane
+  hosts: bootstrap_targets
+  gather_facts: true
+  tasks:
+    - name: Placeholder — bootstrap implementation tracked in a separate PR
+      ansible.builtin.debug:
+        msg: |
+          Bootstrap playbook is intentionally a stub in the scaffold PR.
+          See docs/architecture-brief.md "Bootstrap sequence" for the spec.

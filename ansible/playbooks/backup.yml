@@ -1,0 +1,7 @@
+---
+- name: Backup running-config from every network device
+  hosts: network
+  gather_facts: false
+  roles:
+    - role: backup_config
+      tags: [backup]

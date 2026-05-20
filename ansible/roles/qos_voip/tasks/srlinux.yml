@@ -1,0 +1,9 @@
+---
+- name: "qos_voip | srlinux | DSCP classifier for voice"
+  nokia.srlinux.config:
+    update:
+      - path: "/qos/classifiers/dscp-policy[name=voice]"
+        value:
+          dscp:
+            - value: "{{ qos_voip_marking }}"
+              forwarding-class: fc7

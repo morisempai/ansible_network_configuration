@@ -1,0 +1,44 @@
+---
+# Variables applied to every network device (switches, routers, firewalls).
+# Sub-groups (cisco_ios, fortinet_fortios, nokia_srlinux, frr) may override.
+
+# AAA — RADIUS to AD-backed servers.
+aaa_servers:
+  - host: 10.0.10.50
+    secret: "{{ vault_radius_secret_primary }}"
+    timeout: 5
+  - host: 10.0.10.51
+    secret: "{{ vault_radius_secret_secondary }}"
+    timeout: 5
+
+# 802.1X
+dot1x:
+  enabled: true
+  fallback_vlan: 999  # quarantine
+  voice_vlan: 60
+
+# Master VLAN database — driven by docs/architecture-brief.md.
+vlans:
+  - id: 10
+    name: management
+  - id: 20
+    name: servers
+  - id: 30
+    name: storage
+  - id: 40
+    name: corp_users
+  - id: 50
+    name: critical_infra
+  - id: 60
+    name: voip
+  - id: 70
+    name: guest_wifi
+  - id: 90
+    name: wan
+
+# Default ACL behaviour: deny-all baseline at every L3 boundary.
+acl_default_action: deny
+
+# QoS
+qos_voip_vlan: 60
+qos_voip_dscp: ef

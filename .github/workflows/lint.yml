@@ -1,0 +1,44 @@
+---
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: yamllint + ansible-lint + syntax-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ansible/requirements.txt
+
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: yamllint
+        run: yamllint -c .yamllint .
+
+      - name: ansible-lint
+        run: ansible-lint -c .ansible-lint ansible/
+
+      - name: Syntax-check all playbooks
+        working-directory: ansible
+        run: |
+          for pb in playbooks/*.yml; do
+            echo "::group::syntax-check $pb"
+            ansible-playbook -i inventory/lab/hosts.yml "$pb" --syntax-check
+            echo "::endgroup::"
+          done

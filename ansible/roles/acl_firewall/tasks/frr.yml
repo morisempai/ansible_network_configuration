@@ -1,0 +1,17 @@
+---
+# On a Linux-based switch, packet filtering is nftables, not FRR. Render a
+# deny-by-default ruleset with explicit allows.
+- name: "acl_firewall | frr | nftables deny-by-default ruleset"
+  ansible.builtin.copy:
+    dest: /etc/nftables.conf
+    mode: "0644"
+    content: |
+      table inet filter {
+        chain forward {
+          type filter hook forward priority 0; policy {{ acl_firewall_default_action }};
+      {% for r in acl_firewall_rules %}
+          ip saddr {{ r.src }} ip daddr {{ r.dst }} accept
+      {% endfor %}
+        }
+      }
+  notify: reload nftables

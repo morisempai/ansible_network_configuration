@@ -1,0 +1,9 @@
+---
+- name: Configure Windows hosts
+  hosts: windows
+  gather_facts: true
+  roles:
+    - role: common
+      tags: [common, baseline]
+    - role: windows_ad
+      tags: [windows, ad]

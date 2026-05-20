@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Apply the l3_routing role"
+      ansible.builtin.include_role:
+        name: l3_routing

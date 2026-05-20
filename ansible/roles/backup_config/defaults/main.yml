@@ -1,0 +1,4 @@
+---
+backup_config_dir: "{{ playbook_dir }}/../../backups"
+backup_config_timestamp: "{{ '%Y%m%d-%H%M%S' | strftime }}"
+backup_config_git_push: false

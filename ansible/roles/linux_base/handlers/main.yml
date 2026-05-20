@@ -1,0 +1,10 @@
+---
+- name: restart sshd
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+
+- name: restart zabbix agent
+  ansible.builtin.service:
+    name: zabbix-agent2
+    state: restarted

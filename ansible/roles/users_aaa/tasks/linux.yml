@@ -1,0 +1,10 @@
+---
+- name: "users_aaa | linux | local break-glass accounts"
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    shell: /bin/bash
+    groups: "{{ 'sudo' if item.role == 'admin' else omit }}"
+    append: true
+  loop: "{{ users_aaa_local }}"
+  loop_control:
+    label: "{{ item.name }}"

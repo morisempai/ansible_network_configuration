@@ -1,0 +1,12 @@
+---
+- name: "qos_voip | fortios | traffic shaper for voice"
+  fortinet.fortios.fortios_firewall_shaper_trafficshaper:
+    vdom: root
+    state: present
+    firewall_shaper_trafficshaper:
+      name: voice-shaper
+      guaranteed_bandwidth: 1000
+      maximum_bandwidth: 10000
+      priority: high
+      diffserv: enable
+      diffservcode: "{{ '101110' if qos_voip_marking == 'ef' else '000000' }}"

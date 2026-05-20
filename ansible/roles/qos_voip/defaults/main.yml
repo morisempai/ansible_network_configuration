@@ -1,0 +1,3 @@
+---
+qos_voip_vlan_id: "{{ qos_voip_vlan | default(60) }}"
+qos_voip_marking: "{{ qos_voip_dscp | default('ef') }}"

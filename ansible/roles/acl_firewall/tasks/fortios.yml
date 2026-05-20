@@ -1,0 +1,20 @@
+---
+- name: "acl_firewall | fortios | firewall policy allow-list"
+  fortinet.fortios.fortios_firewall_policy:
+    vdom: root
+    state: present
+    firewall_policy:
+      policyid: "{{ (idx + 1) * 10 }}"
+      name: "{{ item.name }}"
+      srcintf: [{name: any}]
+      dstintf: [{name: any}]
+      srcaddr: [{name: "{{ item.src }}"}]
+      dstaddr: [{name: "{{ item.dst }}"}]
+      service: [{name: "{{ item.service | default('ALL') }}"}]
+      action: "{{ 'accept' if item.action == 'allow' else 'deny' }}"
+      schedule: always
+      logtraffic: all
+  loop: "{{ acl_firewall_rules }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.name }}"

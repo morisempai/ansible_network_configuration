@@ -1,0 +1,10 @@
+---
+# Inputs come from group_vars/all.yml. Defaults here exist so the role is
+# runnable in Molecule without the surrounding inventory.
+
+common_ntp_servers: "{{ ntp_servers | default(['pool.ntp.org']) }}"
+common_dns_servers: "{{ dns_servers | default(['1.1.1.1']) }}"
+common_syslog_servers: "{{ syslog_servers | default([]) }}"
+common_snmp_v3: "{{ snmp_v3 | default({}) }}"
+common_banner: "{{ login_banner | default('Authorised access only.') }}"
+common_hostname: "{{ inventory_hostname_short }}"

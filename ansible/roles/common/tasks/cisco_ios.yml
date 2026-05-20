@@ -1,0 +1,43 @@
+---
+- name: "common | cisco_ios | set hostname"
+  cisco.ios.ios_hostname:
+    config:
+      hostname: "{{ common_hostname }}"
+    state: merged
+
+- name: "common | cisco_ios | configure NTP"
+  cisco.ios.ios_ntp_global:
+    config:
+      servers:
+        "{{ common_ntp_servers | map('community.general.dict_kv', 'server') | list }}"
+    state: merged
+
+- name: "common | cisco_ios | configure DNS resolvers"
+  cisco.ios.ios_system:
+    name_servers: "{{ common_dns_servers }}"
+    domain_search: ["{{ org_domain | default(omit) }}"]
+
+- name: "common | cisco_ios | configure syslog"
+  cisco.ios.ios_logging_global:
+    config:
+      hosts:
+        "{{ common_syslog_servers | map('community.general.dict_kv', 'hostname') | list }}"
+    state: merged
+  when: common_syslog_servers | length > 0
+
+- name: "common | cisco_ios | configure SNMP v3 user"
+  cisco.ios.ios_snmp_server:
+    config:
+      users:
+        - username: "{{ common_snmp_v3.user }}"
+          group: ro
+          version: v3
+          encryption: aes 128
+    state: merged
+  when: common_snmp_v3.user is defined
+
+- name: "common | cisco_ios | login banner"
+  cisco.ios.ios_banner:
+    banner: login
+    text: "{{ common_banner }}"
+    state: present

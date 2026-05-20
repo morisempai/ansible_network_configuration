@@ -1,0 +1,6 @@
+---
+- name: "vlans | cisco_ios | VLAN database"
+  cisco.ios.ios_vlans:
+    config:
+      "{{ vlans_config | map('community.general.dict_kv', 'vlan_id') | list }}"
+    state: merged

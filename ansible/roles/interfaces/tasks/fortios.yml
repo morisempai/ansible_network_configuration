@@ -1,0 +1,14 @@
+---
+- name: "interfaces | fortios | configure interfaces"
+  fortinet.fortios.fortios_system_interface:
+    vdom: root
+    state: present
+    system_interface:
+      name: "{{ item.name }}"
+      description: "{{ item.description | default('') }}"
+      status: "{{ 'up' if item.enabled | default(true) else 'down' }}"
+      mtu_override: "{{ 'enable' if item.mtu is defined else 'disable' }}"
+      mtu: "{{ item.mtu | default(omit) }}"
+  loop: "{{ interfaces_config }}"
+  loop_control:
+    label: "{{ item.name }}"

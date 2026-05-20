@@ -1,0 +1,41 @@
+---
+collections:
+  # Cisco
+  - name: cisco.ios
+    version: ">=8.0.0"
+  - name: cisco.nxos
+    version: ">=6.0.0"
+
+  # Fortinet
+  - name: fortinet.fortios
+    version: ">=2.3.0"
+
+  # Nokia (lab + future production)
+  - name: nokia.srlinux
+    version: ">=0.4.0"
+
+  # Generic networking helpers
+  - name: ansible.netcommon
+    version: ">=6.1.0"
+  - name: ansible.utils
+    version: ">=3.1.0"
+
+  # Linux / Windows
+  - name: ansible.posix
+    version: ">=1.5.0"
+  - name: community.general
+    version: ">=9.0.0"
+  - name: community.windows
+    version: ">=2.3.0"
+  - name: microsoft.ad
+    version: ">=1.5.0"
+
+  # Inventory / monitoring
+  - name: netbox.netbox
+    version: ">=3.20.0"
+  - name: community.zabbix
+    version: ">=3.0.0"
+
+  # Server out-of-band
+  - name: hpe.ilo
+    version: ">=1.2.0"

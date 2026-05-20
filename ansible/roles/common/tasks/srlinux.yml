@@ -1,0 +1,19 @@
+---
+- name: "common | srlinux | set hostname and DNS"
+  nokia.srlinux.config:
+    update:
+      - path: /system/name
+        value:
+          host-name: "{{ common_hostname }}"
+      - path: /system/dns
+        value:
+          server-list: "{{ common_dns_servers }}"
+
+- name: "common | srlinux | NTP"
+  nokia.srlinux.config:
+    update:
+      - path: /system/ntp
+        value:
+          admin-state: enable
+          server:
+            "{{ common_ntp_servers | map('community.general.dict_kv', 'address') | list }}"

@@ -1,0 +1,9 @@
+---
+- name: Configure Linux hosts
+  hosts: linux
+  gather_facts: true
+  roles:
+    - role: common
+      tags: [common, baseline]
+    - role: linux_base
+      tags: [linux, hardening]

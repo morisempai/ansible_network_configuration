@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  role_name: acl_firewall
+  author: ExampleCorp Network Ops
+  description: Deny-by-default ACL / firewall policy with explicit allow-list.
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Any
+dependencies: []

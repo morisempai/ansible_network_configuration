@@ -1,0 +1,6 @@
+---
+# QoS on a Linux-based switch is tc/qdisc, not FRR. Stub keeps the dispatch
+# contract intact; tc rules belong in linux_base if FRR hosts carry voice.
+- name: "qos_voip | frr | QoS handled by host tc (no-op)"
+  ansible.builtin.debug:
+    msg: "FRR/Linux QoS is delegated to tc qdisc; see roles/linux_base."

@@ -1,0 +1,14 @@
+---
+- name: "l3_routing | fortios | static routes"
+  fortinet.fortios.fortios_router_static:
+    vdom: root
+    state: present
+    router_static:
+      seq_num: "{{ idx + 1 }}"
+      dst: "{{ item.prefix }}"
+      gateway: "{{ item.next_hop }}"
+      device: "{{ item.device | default('wan1') }}"
+  loop: "{{ l3_routing_static }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.prefix }}"

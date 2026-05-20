@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Apply the backup_config role"
+      ansible.builtin.include_role:
+        name: backup_config

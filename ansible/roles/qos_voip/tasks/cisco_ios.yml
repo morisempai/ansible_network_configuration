@@ -1,0 +1,10 @@
+---
+- name: "qos_voip | cisco_ios | class-map + policy-map for voice"
+  cisco.ios.ios_config:
+    lines:
+      - class-map match-any VOICE
+      - " match vlan {{ qos_voip_vlan_id }}"
+      - policy-map QOS-OUT
+      - " class VOICE"
+      - "  set dscp {{ qos_voip_marking }}"
+      - "  priority percent 30"

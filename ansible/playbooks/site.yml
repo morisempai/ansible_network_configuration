@@ -1,0 +1,15 @@
+---
+# Full site convergence. Order matters: backup first (rollback insurance),
+# then network, then servers. Run with --check --diff in PRs.
+
+- name: Backup network device running-configs
+  ansible.builtin.import_playbook: backup.yml
+
+- name: Configure network devices
+  ansible.builtin.import_playbook: network.yml
+
+- name: Configure Linux servers
+  ansible.builtin.import_playbook: linux.yml
+
+- name: Configure Windows servers
+  ansible.builtin.import_playbook: windows.yml

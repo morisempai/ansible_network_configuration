@@ -1,0 +1,7 @@
+---
+- name: "backup_config | cisco_ios | fetch running-config"
+  cisco.ios.ios_config:
+    backup: true
+    backup_options:
+      filename: "{{ inventory_hostname }}-{{ backup_config_timestamp }}.cfg"
+      dir_path: "{{ backup_config_dir }}/{{ inventory_hostname }}"

@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  role_name: vlans
+  author: ExampleCorp Network Ops
+  description: VLAN database management across L2 devices.
+  license: MIT
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Any
+dependencies: []
