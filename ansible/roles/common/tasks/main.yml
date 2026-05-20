@@ -1,8 +1,10 @@
 ---
 # Dispatcher. Maps ansible_network_os -> per-vendor task file, falling back to
 # ansible_os_family for non-network hosts, then to linux.yml as a last resort.
-# Missing implementations are silently skipped (errors='ignore'), so a role
-# that does not target every vendor still lints and runs.
+# 'select' drops the empty candidate when ansible_network_os is unknown —
+# otherwise first_found matches the tasks/ directory itself. Missing
+# implementations are silently skipped (errors='ignore'), so a role that does
+# not target every vendor still lints and runs.
 
 - name: "Common | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
@@ -19,6 +21,6 @@
       - "linux.yml"
     _vendor_task_file: >-
       {{ lookup('ansible.builtin.first_found',
-                _candidates, errors='ignore',
+                _candidates | select | list, errors='ignore',
                 paths=[role_path + '/tasks']) }}
   when: _vendor_task_file | length > 0

@@ -15,6 +15,6 @@
       - "linux.yml"
     _vendor_task_file: >-
       {{ lookup('ansible.builtin.first_found',
-                _candidates, errors='ignore',
+                _candidates | select | list, errors='ignore',
                 paths=[role_path + '/tasks']) }}
   when: _vendor_task_file | length > 0

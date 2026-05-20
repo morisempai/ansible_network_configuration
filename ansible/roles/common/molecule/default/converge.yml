@@ -2,6 +2,15 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  pre_tasks:
+    # The role installs chrony itself but only *configures* rsyslog
+    # forwarding, assuming rsyslog is already the syslog daemon. Refresh the
+    # apt cache and pre-install rsyslog so the test host matches that contract.
+    - name: "Refresh apt cache and ensure rsyslog is installed"
+      ansible.builtin.apt:
+        name: rsyslog
+        state: present
+        update_cache: true
   tasks:
     - name: "Apply the common role"
       ansible.builtin.include_role:
