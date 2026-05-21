@@ -5,6 +5,10 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# Fail fast on malformed inputs before any device is touched.
+- name: "Windows_ad | validate role inputs"
+  ansible.builtin.include_tasks: assert.yml
+
 # Windows-only role: no vendor dispatch needed.
 - name: "Windows_ad | apply Windows AD configuration"
   ansible.builtin.include_tasks: windows.yml

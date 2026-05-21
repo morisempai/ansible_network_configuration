@@ -2,6 +2,16 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  vars:
+    # Drives tasks/assert.yml (schema validation). On a plain Linux host with
+    # no ansible_network_os the role validates the rules, then resolves to a
+    # no-op — there is no device path.
+    acl_firewall_rules:
+      - name: corp-to-servers-https
+        src: 10.0.40.0/22
+        dst: 10.0.20.0/24
+        service: tcp/443
+        action: allow
   tasks:
     - name: "Apply the acl_firewall role"
       ansible.builtin.include_role:

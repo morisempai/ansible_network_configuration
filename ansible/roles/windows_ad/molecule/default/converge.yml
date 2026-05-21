@@ -7,4 +7,7 @@
       ansible.builtin.include_role:
         name: windows_ad
       vars:
+        # A single test host promotes as its own primary DC, which satisfies
+        # tasks/assert.yml (a non-primary DC would need windows_ad_replica_of).
+        windows_ad_is_primary: true
         windows_ad_safe_mode_password: "{{ lookup('env', 'MOLECULE_AD_SAFE_MODE_PW') | default('Lab-DSRM-Pw1!', true) }}"

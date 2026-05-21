@@ -1,0 +1,39 @@
+---
+# Schema check for the users_aaa inputs. Runs after NetBox resolution.
+- name: "Users_aaa | assert | every local account is well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.name is defined
+      - item.name | string | length > 0
+      - item.role is defined
+      - item.role | string | length > 0
+    fail_msg: >-
+      Invalid users_aaa_local entry {{ item }} — each account needs a
+      non-empty `name` and `role`.
+  loop: "{{ users_aaa_local }}"
+  loop_control:
+    label: "{{ item.name | default('?') }}"
+
+- name: "Users_aaa | assert | local account names are unique"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - users_aaa_local | map(attribute='name') | list | length
+        == users_aaa_local | map(attribute='name') | unique | list | length
+    fail_msg: >-
+      Duplicate account name in users_aaa_local:
+      {{ users_aaa_local | map(attribute='name') | list }}
+
+- name: "Users_aaa | assert | servers and dot1x are well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - users_aaa_servers is sequence
+      - users_aaa_servers is not string
+      - users_aaa_dot1x is mapping
+      - users_aaa_dot1x.enabled is defined
+      - users_aaa_dot1x.enabled is boolean
+    fail_msg: >-
+      users_aaa_servers must be a list and users_aaa_dot1x a mapping with a
+      boolean `enabled` key.

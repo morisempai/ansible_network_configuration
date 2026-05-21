@@ -5,6 +5,10 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# Fail fast on malformed inputs before any device is touched.
+- name: "Common | validate role inputs"
+  ansible.builtin.include_tasks: assert.yml
+
 # Dispatcher. Maps ansible_network_os -> per-vendor task file, falling back to
 # ansible_os_family for non-network hosts, then to linux.yml as a last resort.
 # 'select' drops the empty candidate when ansible_network_os is unknown —

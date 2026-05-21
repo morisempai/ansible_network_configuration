@@ -5,6 +5,10 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# Fail fast on malformed inputs before any device is touched.
+- name: "Linux_base | validate role inputs"
+  ansible.builtin.include_tasks: assert.yml
+
 # Linux-only role: no vendor dispatch needed, but the file name keeps parity
 # with the dispatcher convention used by network roles.
 - name: "Linux_base | apply Linux baseline"
