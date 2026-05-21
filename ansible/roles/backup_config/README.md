@@ -15,6 +15,13 @@ Cisco IOS, Nokia SR Linux, FRR, FortiGate.
 | `backup_config_dir`       | str  | Local directory for backups              |
 | `backup_config_git_push`  | bool | Commit + push backups to a git repo      |
 
+## Input validation
+
+`tasks/assert.yml` checks the inputs before any device is touched:
+
+- `backup_config_dir` is a non-empty path.
+- `backup_config_git_push` is a boolean.
+
 ## Example
 
 ```yaml

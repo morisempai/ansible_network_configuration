@@ -2,6 +2,17 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  vars:
+    # Drives tasks/assert.yml (schema validation). On a plain Linux host with
+    # no ansible_network_os the role validates the inputs, then resolves to a
+    # no-op — there is no device path.
+    l3_routing_svis:
+      - vlan_id: 40
+        address: 10.0.40.1/22
+        description: corp users gateway
+    l3_routing_static:
+      - prefix: 0.0.0.0/0
+        next_hop: 10.0.90.1
   tasks:
     - name: "Apply the l3_routing role"
       ansible.builtin.include_role:

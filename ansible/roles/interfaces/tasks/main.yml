@@ -5,6 +5,10 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# Fail fast on malformed inputs before any device is touched.
+- name: "Interfaces | validate role inputs"
+  ansible.builtin.include_tasks: assert.yml
+
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
 - name: "Interfaces | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"

@@ -1,0 +1,44 @@
+---
+# Schema check for the acl_firewall inputs. Pins the vendor-agnostic
+# interface: every tasks/<vendor>.yml file can assume a valid default action
+# and well-formed rules. Runs after NetBox resolution so it validates whatever
+# actually feeds the device task.
+- name: "Acl_firewall | assert | default action is allow or deny"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - acl_firewall_default_action in ['allow', 'deny']
+    fail_msg: >-
+      acl_firewall_default_action must be 'allow' or 'deny', got
+      '{{ acl_firewall_default_action }}'. The network policy is deny-by-default.
+
+- name: "Acl_firewall | assert | every rule is well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.name is defined
+      - item.name | string | length > 0
+      - item.src is defined
+      - item.src | string | length > 0
+      - item.dst is defined
+      - item.dst | string | length > 0
+      - item.service is defined
+      - item.service | string | length > 0
+      - item.action is defined
+      - item.action in ['allow', 'deny']
+    fail_msg: >-
+      Invalid acl_firewall rule {{ item }} — each rule needs a non-empty
+      name, src, dst and service, and an action of 'allow' or 'deny'.
+  loop: "{{ acl_firewall_rules }}"
+  loop_control:
+    label: "{{ item.name | default('?') }}"
+
+- name: "Acl_firewall | assert | rule names are unique"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - acl_firewall_rules | map(attribute='name') | list | length
+        == acl_firewall_rules | map(attribute='name') | unique | list | length
+    fail_msg: >-
+      Duplicate rule name in acl_firewall_rules:
+      {{ acl_firewall_rules | map(attribute='name') | list }}

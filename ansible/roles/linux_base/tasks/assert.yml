@@ -1,0 +1,27 @@
+---
+# Schema check for the linux_base inputs. Runs after NetBox resolution.
+- name: "Linux_base | assert | inputs are well-typed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - linux_base_disable_root_ssh is boolean
+      - linux_base_password_auth is boolean
+      - linux_base_install_zabbix_agent is boolean
+      - linux_base_allow_sudo_groups is sequence
+      - linux_base_allow_sudo_groups is not string
+      - linux_base_allow_sudo_groups | length > 0
+    fail_msg: >-
+      linux_base_disable_root_ssh, linux_base_password_auth and
+      linux_base_install_zabbix_agent must be booleans, and
+      linux_base_allow_sudo_groups a non-empty list — an empty list would
+      leave no group able to sudo.
+
+- name: "Linux_base | assert | zabbix server is set when the agent is enabled"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not linux_base_install_zabbix_agent or
+        (linux_base_zabbix_server | string | length > 0)
+    fail_msg: >-
+      linux_base_zabbix_server must be set when
+      linux_base_install_zabbix_agent is true.

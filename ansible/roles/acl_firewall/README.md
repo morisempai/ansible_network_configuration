@@ -26,6 +26,16 @@ Each `acl_firewall_rules` item:
   action: allow
 ```
 
+## Input validation
+
+`tasks/assert.yml` checks the inputs before any device is touched, so a
+malformed policy fails the run early with a clear message:
+
+- `acl_default_action` is `allow` or `deny`.
+- Every `acl_firewall_rules` item has a non-empty `name`, `src`, `dst` and
+  `service`, and an `action` of `allow` or `deny`.
+- Rule names are unique.
+
 ## Example
 
 ```yaml

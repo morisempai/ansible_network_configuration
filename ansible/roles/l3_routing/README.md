@@ -17,6 +17,15 @@ Cisco IOS, Nokia SR Linux, FRR, FortiGate.
 | `l3_routing_static`    | list | Static routes: `prefix`, `next_hop`      |
 | `l3_routing_ospf`      | dict | OSPF process id + areas (optional)       |
 
+## Input validation
+
+`tasks/assert.yml` checks the inputs before any device is touched:
+
+- Every `l3_routing_svis` item has an integer `vlan_id` in 1–4094 and a
+  non-empty `address`.
+- Every `l3_routing_static` item has a non-empty `prefix` and `next_hop`.
+- `l3_routing_ospf` is a mapping.
+
 ## Example
 
 ```yaml

@@ -1,0 +1,29 @@
+---
+# Schema check for the common role inputs. These come from group_vars/all.yml,
+# so a typo there (e.g. a scalar where a list is expected) would otherwise
+# only surface deep inside a vendor task. Runs after NetBox resolution.
+- name: "Common | assert | service lists are lists"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - common_ntp_servers is sequence
+      - common_ntp_servers is not string
+      - common_ntp_servers | length > 0
+      - common_dns_servers is sequence
+      - common_dns_servers is not string
+      - common_dns_servers | length > 0
+      - common_syslog_servers is sequence
+      - common_syslog_servers is not string
+    fail_msg: >-
+      common_ntp_servers and common_dns_servers must be non-empty lists and
+      common_syslog_servers a list — check ntp_servers / dns_servers /
+      syslog_servers in group_vars.
+
+- name: "Common | assert | snmp_v3 is a mapping and hostname is set"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - common_snmp_v3 is mapping
+      - common_hostname | string | length > 0
+    fail_msg: >-
+      common_snmp_v3 must be a mapping and common_hostname must be non-empty.

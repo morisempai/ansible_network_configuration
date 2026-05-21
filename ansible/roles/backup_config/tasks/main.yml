@@ -5,6 +5,10 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# Fail fast on malformed inputs before any device is touched.
+- name: "Backup_config | validate role inputs"
+  ansible.builtin.include_tasks: assert.yml
+
 - name: "Backup_config | ensure backup directory exists"
   ansible.builtin.file:
     path: "{{ backup_config_dir }}/{{ inventory_hostname }}"

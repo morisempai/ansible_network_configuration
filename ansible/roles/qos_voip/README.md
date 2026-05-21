@@ -16,6 +16,14 @@ Cisco IOS, Nokia SR Linux, FRR, FortiGate.
 
 Both come from `group_vars/network.yml`.
 
+## Input validation
+
+`tasks/assert.yml` checks the inputs before any device is touched:
+
+- `qos_voip_vlan` is a VLAN id in 1–4094.
+- `qos_voip_dscp` is a recognised DSCP class (`ef`, `csN`, `afNN`,
+  `default`/`be`).
+
 ## Example
 
 ```yaml

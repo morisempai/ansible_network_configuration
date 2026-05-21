@@ -1,0 +1,33 @@
+---
+# Schema check for interfaces_config. Pins the vendor-agnostic interface:
+# every tasks/<vendor>.yml file can assume each item has a non-empty `name`
+# and, where present, well-typed optional fields. Runs after NetBox resolution.
+- name: "Interfaces | assert | every interface is well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.name is defined
+      - item.name | string | length > 0
+      - (item.enabled is not defined) or (item.enabled is boolean)
+      - (item.mtu is not defined) or (item.mtu is integer and item.mtu > 0)
+      - (item.mode is not defined) or
+        (item.mode in ['access', 'trunk', 'routed'])
+      - (item.trunk_vlans is not defined) or
+        (item.trunk_vlans is sequence and item.trunk_vlans is not string)
+    fail_msg: >-
+      Invalid interface entry {{ item }} — needs a non-empty `name`; optional
+      `enabled` must be boolean, `mtu` a positive integer, `mode` one of
+      access/trunk/routed, and `trunk_vlans` a list.
+  loop: "{{ interfaces_config }}"
+  loop_control:
+    label: "{{ item.name | default('?') }}"
+
+- name: "Interfaces | assert | interface names are unique"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - interfaces_config | map(attribute='name') | list | length
+        == interfaces_config | map(attribute='name') | unique | list | length
+    fail_msg: >-
+      Duplicate interface name in interfaces_config:
+      {{ interfaces_config | map(attribute='name') | list }}

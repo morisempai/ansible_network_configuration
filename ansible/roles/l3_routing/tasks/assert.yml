@@ -1,0 +1,41 @@
+---
+# Schema check for the l3_routing inputs. Runs after NetBox resolution so it
+# validates whatever actually feeds the device task.
+- name: "L3_routing | assert | every SVI is well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.vlan_id is defined
+      - item.vlan_id is integer
+      - item.vlan_id >= 1
+      - item.vlan_id <= 4094
+      - item.address is defined
+      - item.address | string | length > 0
+    fail_msg: >-
+      Invalid l3_routing_svis entry {{ item }} — each SVI needs an integer
+      `vlan_id` (1-4094) and a non-empty `address`.
+  loop: "{{ l3_routing_svis }}"
+  loop_control:
+    label: "{{ item.vlan_id | default('?') }}"
+
+- name: "L3_routing | assert | every static route is well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.prefix is defined
+      - item.prefix | string | length > 0
+      - item.next_hop is defined
+      - item.next_hop | string | length > 0
+    fail_msg: >-
+      Invalid l3_routing_static entry {{ item }} — each route needs a
+      non-empty `prefix` and `next_hop`.
+  loop: "{{ l3_routing_static }}"
+  loop_control:
+    label: "{{ item.prefix | default('?') }}"
+
+- name: "L3_routing | assert | ospf is a mapping"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - l3_routing_ospf is mapping
+    fail_msg: "l3_routing_ospf must be a mapping (got {{ l3_routing_ospf }})."

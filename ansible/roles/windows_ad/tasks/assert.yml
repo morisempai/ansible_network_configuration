@@ -1,0 +1,25 @@
+---
+# Schema check for the windows_ad inputs. Runs after NetBox resolution.
+# windows_ad_safe_mode_password has no default on purpose — it must come from
+# vault, and this assert fails fast if it is missing.
+- name: "Windows_ad | assert | inputs are well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - windows_ad_domain | string | length > 0
+      - "'.' in (windows_ad_domain | string)"
+      - windows_ad_is_primary is boolean
+      - windows_ad_is_primary or (windows_ad_replica_of | string | length > 0)
+    fail_msg: >-
+      windows_ad_domain must be a dotted domain name, windows_ad_is_primary a
+      boolean, and windows_ad_replica_of set when this host is not primary.
+
+- name: "Windows_ad | assert | safe mode password is provided"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - windows_ad_safe_mode_password is defined
+      - windows_ad_safe_mode_password | default('') | string | length > 0
+    fail_msg: >-
+      windows_ad_safe_mode_password is required (no default — supply it from
+      vault).

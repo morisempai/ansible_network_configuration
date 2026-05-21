@@ -1,0 +1,13 @@
+---
+# Schema check for the backup_config inputs. Runs after NetBox resolution so
+# it validates whatever actually feeds the device task.
+- name: "Backup_config | assert | inputs are well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - backup_config_dir | string | length > 0
+      - backup_config_git_push is boolean
+    fail_msg: >-
+      backup_config_dir must be a non-empty path and backup_config_git_push
+      a boolean (got dir='{{ backup_config_dir }}',
+      git_push='{{ backup_config_git_push }}').

@@ -26,6 +26,16 @@ Linux only.
 
 Defined in `group_vars/linux.yml`.
 
+## Input validation
+
+`tasks/assert.yml` checks the inputs before the baseline is applied:
+
+- `linux_base_disable_root_ssh`, `linux_base_password_auth` and
+  `linux_base_install_zabbix_agent` are booleans.
+- `linux_base_allow_sudo_groups` is a non-empty list — an empty list would
+  leave no group able to `sudo`.
+- `linux_base_zabbix_server` is set when the Zabbix agent is enabled.
+
 ## Example
 
 ```yaml
