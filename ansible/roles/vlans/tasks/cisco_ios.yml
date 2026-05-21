@@ -1,6 +1,9 @@
 ---
-- name: "Vlans | cisco_ios | VLAN database"
+# The C9300 / C9200 VLAN database. cisco.ios.ios_vlans is a resource module:
+# it takes the full desired list in a single call. state: merged adds and
+# updates the listed VLANs without removing VLAN 1 or any unlisted VLAN —
+# pruning the database is deliberately out of scope (see README).
+- name: "Vlans | cisco_ios | enforce the VLAN database"
   cisco.ios.ios_vlans:
-    config:
-      "{{ vlans_config | map('community.general.dict_kv', 'vlan_id') | list }}"
+    config: "{{ vlans_config | community.general.json_query('[].{vlan_id: id, name: name}') }}"
     state: merged

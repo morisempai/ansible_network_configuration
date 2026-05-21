@@ -1,2 +1,15 @@
 ---
+# Inputs for the vlans role.
+#
+# vlans_config — the VLAN database this role enforces. A list of objects;
+# this is the vendor-agnostic interface every tasks/<vendor>.yml file below
+# consumes, and tasks/assert.yml enforces it:
+#
+#   vlans_config:
+#     - id:   10            # required, integer 1-4094
+#       name: management    # required, non-empty string
+#
+# By default it mirrors the network-wide `vlans` list from
+# group_vars/network.yml. When netbox_enabled is true, tasks/netbox.yml
+# replaces it with the VLAN database queried from NetBox IPAM.
 vlans_config: "{{ vlans | default([]) }}"
