@@ -16,13 +16,24 @@ Windows only.
 
 ## Variables
 
-| Variable                       | Type | Purpose                               |
-|--------------------------------|------|---------------------------------------|
-| `windows_ad_domain`            | str  | AD domain FQDN                        |
-| `windows_ad_safe_mode_password`| str  | DSRM password (vault-encrypted)       |
-| `windows_ad_replica_of`        | str  | Existing DC to replicate from         |
+| Variable                       | Type | Purpose                                  |
+|--------------------------------|------|------------------------------------------|
+| `windows_ad_domain`            | str  | AD domain FQDN                           |
+| `windows_ad_is_primary`        | bool | Promote as the primary DC, else a replica|
+| `windows_ad_safe_mode_password`| str  | DSRM password (vault-encrypted)          |
+| `windows_ad_replica_of`        | str  | Existing DC to replicate from (replica)  |
 
 Defined in `group_vars/windows.yml`.
+
+## Input validation
+
+`tasks/assert.yml` checks the inputs before the host is promoted:
+
+- `windows_ad_domain` is a dotted domain name.
+- `windows_ad_is_primary` is a boolean; a replica (`false`) must set
+  `windows_ad_replica_of`.
+- `windows_ad_safe_mode_password` is provided — it has no default, so supply
+  it from vault.
 
 ## Example
 

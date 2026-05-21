@@ -29,6 +29,16 @@ Consumed from `group_vars/all.yml`:
 | `snmp_v3`         | dict   | `user`, `auth_proto`, `priv_proto`     |
 | `login_banner`    | string | Multi-line banner text                 |
 
+## Input validation
+
+`tasks/assert.yml` checks the inputs before any device is touched, catching
+typos in `group_vars/all.yml` early:
+
+- `ntp_servers` and `dns_servers` are non-empty lists; `syslog_servers` is a
+  list.
+- `snmp_v3` is a mapping.
+- The resolved hostname is non-empty.
+
 ## Example
 
 ```yaml

@@ -10,13 +10,14 @@
       - item.name | string | length > 0
       - (item.enabled is not defined) or (item.enabled is boolean)
       - (item.mtu is not defined) or (item.mtu is integer and item.mtu > 0)
-      - (item.mode is not defined) or (item.mode in ['access', 'trunk'])
+      - (item.mode is not defined) or
+        (item.mode in ['access', 'trunk', 'routed'])
       - (item.trunk_vlans is not defined) or
         (item.trunk_vlans is sequence and item.trunk_vlans is not string)
     fail_msg: >-
       Invalid interface entry {{ item }} — needs a non-empty `name`; optional
       `enabled` must be boolean, `mtu` a positive integer, `mode` one of
-      access/trunk, and `trunk_vlans` a list.
+      access/trunk/routed, and `trunk_vlans` a list.
   loop: "{{ interfaces_config }}"
   loop_control:
     label: "{{ item.name | default('?') }}"

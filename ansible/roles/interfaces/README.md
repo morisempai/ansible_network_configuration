@@ -30,6 +30,15 @@ Each `interfaces_config` item:
 Interface lists are normally generated from NetBox; the static form above is
 for the lab and Molecule.
 
+## Input validation
+
+`tasks/assert.yml` checks `interfaces_config` before any device is touched:
+
+- Every interface has a non-empty `name`.
+- Where present: `enabled` is a boolean, `mtu` a positive integer, `mode` one
+  of `access`/`trunk`/`routed`, and `trunk_vlans` a list.
+- Interface names are unique.
+
 ## Example
 
 ```yaml
