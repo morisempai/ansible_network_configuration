@@ -4,9 +4,12 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - qos_voip_vlan_id is integer
-      - qos_voip_vlan_id >= 1
-      - qos_voip_vlan_id <= 4094
+      # qos_voip_vlan_id may arrive as an int or as a numeric string — the
+      # role default is a templated value, which stringifies a bare scalar.
+      # Accept either; reject anything non-numeric or out of range.
+      - (qos_voip_vlan_id | string) is match('^[0-9]+$')
+      - (qos_voip_vlan_id | int) >= 1
+      - (qos_voip_vlan_id | int) <= 4094
       - (qos_voip_marking | string | lower) in _qos_voip_valid_dscp
     fail_msg: >-
       qos_voip_vlan_id must be an integer 1-4094 and qos_voip_marking a valid
