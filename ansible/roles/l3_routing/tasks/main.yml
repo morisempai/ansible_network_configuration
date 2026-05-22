@@ -5,9 +5,20 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
+# True when the device has any L3 intent to apply — SVIs, static routes or
+# OSPF. Used to gate both validation and the vendor dispatch so a device
+# with no routing config is a clean no-op.
+- name: "L3_routing | set the has-routing-intent flag"
+  ansible.builtin.set_fact:
+    _l3_routing_has_intent: >-
+      {{ (l3_routing_svis | length > 0)
+         or (l3_routing_static | length > 0)
+         or (l3_routing_ospf | length > 0) }}
+
 # Fail fast on malformed inputs before any device is touched.
 - name: "L3_routing | validate role inputs"
   ansible.builtin.include_tasks: assert.yml
+  when: _l3_routing_has_intent | bool
 
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
 - name: "L3_routing | include vendor task file"
@@ -27,4 +38,6 @@
       {{ lookup('ansible.builtin.first_found',
                 _candidates | select | list, errors='ignore',
                 paths=[role_path + '/tasks']) | default('', true) }}
-  when: _vendor_task_file | length > 0
+  when:
+    - _vendor_task_file | length > 0
+    - _l3_routing_has_intent | bool

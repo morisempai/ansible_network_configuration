@@ -1,9 +1,44 @@
 ---
+# Inputs for the l3_routing role.
+#
+# All three variables are the vendor-agnostic interface every
+# tasks/<vendor>.yml file consumes, and tasks/assert.yml enforces them.
+# When netbox_enabled is true, tasks/netbox.yml replaces them with the
+# routing intent read from the device's NetBox config context.
+
+# l3_routing_svis — the routed VLAN interfaces (SVIs) this device owns. A
+# list of objects:
+#
+#   l3_routing_svis:
+#     - vlan_id: 40              # required, integer 1-4094
+#       address: 10.0.40.1/22   # required, non-empty CIDR
+#       description: corp users gateway   # optional
+#
+# On the HQ Cisco core an SVI is a `Vlan<id>` interface; on a regional
+# FortiGate (router-on-a-stick) it is an IP on the `vlan<id>` tagged
+# sub-interface the vlans role created. Storage VLAN 30 must never appear
+# here — it is intentionally non-routed (docs/architecture-brief.md).
 l3_routing_svis: []
-# - vlan_id: 40
-#   address: 10.0.40.1/22
-#   description: corp users gateway
+
+# l3_routing_static — static routes. A list of objects:
+#
+#   l3_routing_static:
+#     - prefix: 0.0.0.0/0       # required, non-empty CIDR
+#       next_hop: 10.0.90.1     # required, non-empty next-hop address
+#       device: wan1            # optional, FortiGate egress interface
+#
+# `device` is consumed only by the FortiGate implementation (it needs the
+# egress interface for the route); other vendors ignore it.
 l3_routing_static: []
-# - prefix: 0.0.0.0/0
-#   next_hop: 10.0.90.1
+
+# l3_routing_ospf — the OSPF profile for this device. A mapping:
+#
+#   l3_routing_ospf:
+#     process_id: 1             # optional integer, defaults to 1
+#     areas:                    # list of networks to advertise
+#       - network: 10.0.40.0/22
+#         area: 0
+#
+# An empty mapping (the default) disables OSPF — only static routing is
+# applied. See the README for the per-vendor scope of OSPF support.
 l3_routing_ospf: {}

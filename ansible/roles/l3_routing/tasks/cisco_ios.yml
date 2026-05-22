@@ -1,25 +1,63 @@
 ---
-- name: "L3_routing | cisco_ios | SVIs"
-  cisco.ios.ios_l3_interfaces:
-    config:
-      - name: "Vlan{{ item.vlan_id }}"
-        ipv4:
-          - address: "{{ item.address }}"
-    state: merged
-  loop: "{{ l3_routing_svis }}"
-  loop_control:
-    label: "Vlan{{ item.vlan_id }}"
+# Layer-3 configuration for the HQ Cisco core (C9300 stack). The core does
+# inter-VLAN routing through SVIs, plus static routes and — for the WAN /
+# inter-site fabric — OSPF (docs/architecture-brief.md).
+#
+# ios_l3_interfaces, ios_static_routes and ios_ospfv2 are resource modules:
+# each takes the FULL desired list in a single call, so this file builds
+# the complete config structure and applies it once per concern rather
+# than looping per item. state: merged adds and updates the listed objects
+# without pruning anything else.
 
+# An SVI is created the moment it carries an IP, so ios_l3_interfaces alone
+# brings the Vlan<id> interface into existence with its address.
+- name: "L3_routing | cisco_ios | SVI IP addressing"
+  cisco.ios.ios_l3_interfaces:
+    config: >-
+      {{ l3_routing_svis
+         | json_query('[].{name: join(``, [`Vlan`, to_string(vlan_id)]),
+                            ipv4: [{address: address}]}') }}
+    state: merged
+  when: l3_routing_svis | length > 0
+
+# ios_l3_interfaces has no description field, so the SVI description is set
+# separately through ios_interfaces. Only SVIs that declare one are passed.
+- name: "L3_routing | cisco_ios | SVI descriptions"
+  cisco.ios.ios_interfaces:
+    config: >-
+      {{ l3_routing_svis
+         | selectattr('description', 'defined')
+         | json_query('[].{name: join(``, [`Vlan`, to_string(vlan_id)]),
+                            description: description}') }}
+    state: merged
+  when:
+    - l3_routing_svis | selectattr('description', 'defined') | list | length > 0
+
+# Static routes — the whole IPv4 routing table in one resource-module call.
 - name: "L3_routing | cisco_ios | static routes"
   cisco.ios.ios_static_routes:
     config:
       - address_families:
           - afi: ipv4
-            routes:
-              - dest: "{{ item.prefix }}"
-                next_hops:
-                  - forward_router_address: "{{ item.next_hop }}"
+            routes: >-
+              {{ l3_routing_static
+                 | json_query('[].{dest: prefix,
+                                    next_hops: [{forward_router_address:
+                                                 next_hop}]}') }}
     state: merged
-  loop: "{{ l3_routing_static }}"
-  loop_control:
-    label: "{{ item.prefix }}"
+  when: l3_routing_static | length > 0
+
+# OSPF — one process with the network/area advertisements. ios_ospfv2
+# expects the area id as a string, so to_string coerces an integer area.
+# Skipped entirely when l3_routing_ospf is the empty default.
+- name: "L3_routing | cisco_ios | OSPF process and networks"
+  cisco.ios.ios_ospfv2:
+    config:
+      processes:
+        - process_id: "{{ l3_routing_ospf.process_id | default(1) | int }}"
+          network: >-
+            {{ l3_routing_ospf.areas | default([])
+               | json_query('[].{address: network,
+                                  area: to_string(area)}') }}
+    state: merged
+  when: l3_routing_ospf | length > 0

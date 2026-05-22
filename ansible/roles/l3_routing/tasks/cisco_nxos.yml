@@ -1,0 +1,9 @@
+---
+# The MDS 9132T runs NX-OS but is a Fibre Channel SAN switch, physically
+# isolated from the LAN with no routing to any VLAN (docs/architecture-
+# brief.md). It has no SVIs, no IP routing table and no OSPF, so this
+# role's model does not apply. Explicit no-op keeps the dispatch contract
+# intact (see roles/common/tasks/main.yml).
+- name: "L3_routing | cisco_nxos | FC SAN switch does no IP routing (no-op)"
+  ansible.builtin.debug:
+    msg: "MDS 9132T is a Fibre Channel SAN switch; L3 routing config does not apply."

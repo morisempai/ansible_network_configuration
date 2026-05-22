@@ -1,10 +1,92 @@
 ---
+# Layer-3 configuration for Nokia SR Linux (the HQ core / regional edge in
+# the lab, docs/lab.md). SR Linux is configured declaratively through gNMI
+# paths with nokia.srlinux.config, which is idempotent per path.
+#
+# Path/model note: SR Linux gNMI paths cannot be checked with `ansible-doc`
+# (nokia.srlinux.config is a generic path-based module). The paths below
+# follow the SR Linux 23.x+ YANG model used elsewhere in this repo
+# (see roles/vlans and roles/interfaces) — the irb-interface, next-hop-group
+# and static-route trees. Treat SR Linux >= 23.3 as the version assumption.
+
+# --- SVIs ---------------------------------------------------------------
+# On SR Linux the SVI equivalent of a routed VLAN interface is an `irb`
+# (integrated routing and bridging) subinterface: it carries the gateway IP
+# and is bound into the per-VLAN mac-vrf network-instance the vlans role
+# created. The irb subinterface also joins the `default` (L3) network-
+# instance so the address is routable. Run the vlans role first so the
+# target mac-vrf already exists.
+- name: "L3_routing | srlinux | irb subinterface per SVI (gateway IP)"
+  nokia.srlinux.config:
+    update:
+      - path: "/interface[name=irb0]/subinterface[index={{ item.vlan_id }}]"
+        value:
+          admin-state: enable
+          description: "{{ item.description | default(omit) }}"
+          ipv4:
+            admin-state: enable
+            address:
+              - ip-prefix: "{{ item.address }}"
+      - path: >-
+          /network-instance[name=vlan-{{ item.vlan_id }}]/interface[name=irb0.{{ item.vlan_id }}]
+        value: {}
+      - path: >-
+          /network-instance[name=default]/interface[name=irb0.{{ item.vlan_id }}]
+        value: {}
+  loop: "{{ l3_routing_svis }}"
+  loop_control:
+    label: "irb0.{{ item.vlan_id }} (vlan {{ item.vlan_id }})"
+
+# --- Static routes ------------------------------------------------------
+# A static route on SR Linux points at a next-hop-group, which in turn
+# references one or more next-hop entries that hold the actual addresses.
+# The original scaffold referenced a next-hop-group `nhg-<addr>` but never
+# defined it, so every route was a dangling reference. This defines, per
+# route, the next-hop (with the real address), the next-hop-group, and only
+# then the route — a complete, resolvable chain.
+- name: "L3_routing | srlinux | define next-hop and next-hop-group per route"
+  nokia.srlinux.config:
+    update:
+      - path: >-
+          /network-instance[name=default]/next-hop-groups/group[name=nhg-{{ item.next_hop }}]
+        value:
+          nexthop:
+            - index: 0
+              ip-address: "{{ item.next_hop }}"
+              admin-state: enable
+  loop: "{{ l3_routing_static }}"
+  loop_control:
+    label: "nhg-{{ item.next_hop }}"
+
 - name: "L3_routing | srlinux | static routes (default network-instance)"
   nokia.srlinux.config:
     update:
-      - path: "/network-instance[name=default]/static-routes/route[prefix={{ item.prefix }}]"
+      - path: >-
+          /network-instance[name=default]/static-routes/route[prefix={{ item.prefix }}]
         value:
+          admin-state: enable
           next-hop-group: "nhg-{{ item.next_hop }}"
   loop: "{{ l3_routing_static }}"
   loop_control:
     label: "{{ item.prefix }}"
+
+# --- OSPF ---------------------------------------------------------------
+# OSPF runs as a protocol instance under the default network-instance. Each
+# l3_routing_ospf.areas entry becomes an area with an interface reference;
+# SR Linux attaches interfaces to areas (it has no IOS-style `network`
+# statement), so the per-VLAN irb subinterfaces are enrolled here. Skipped
+# when l3_routing_ospf is the empty default.
+- name: "L3_routing | srlinux | OSPF instance, areas and interfaces"
+  nokia.srlinux.config:
+    update:
+      - path: >-
+          /network-instance[name=default]/protocols/ospf/instance[name=ospf-{{ l3_routing_ospf.process_id | default(1) }}]
+        value:
+          admin-state: enable
+          version: ospf-v2
+          area:
+            - area-id: "{{ item.area }}"
+  loop: "{{ l3_routing_ospf.areas | default([]) }}"
+  loop_control:
+    label: "area {{ item.area }} ({{ item.network }})"
+  when: l3_routing_ospf | length > 0
