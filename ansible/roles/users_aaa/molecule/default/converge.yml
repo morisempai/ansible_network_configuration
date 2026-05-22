@@ -2,6 +2,28 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  vars:
+    # Drives tasks/assert.yml (schema validation) and the dispatcher. On the
+    # plain Debian test host there is no ansible_network_os, so the role
+    # resolves to linux.yml — that path really runs here and creates the
+    # local accounts below, so converge must succeed and be idempotent.
+    #
+    # The RADIUS secret is a placeholder, not a real key: it only has to be
+    # non-empty for the schema check. The Cisco / FortiGate / SR Linux paths
+    # are not exercised on a Linux host.
+    aaa_servers:
+      - host: 10.0.10.40
+        secret: molecule-placeholder-secret
+        timeout: 5
+      - host: 10.0.10.41
+        secret: molecule-placeholder-secret
+    dot1x:
+      enabled: true
+    users_aaa_local:
+      - name: netadmin
+        role: admin
+      - name: netviewer
+        role: operator
   tasks:
     - name: "Apply the users_aaa role"
       ansible.builtin.include_role:

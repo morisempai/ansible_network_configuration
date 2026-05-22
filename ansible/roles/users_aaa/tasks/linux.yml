@@ -1,10 +1,30 @@
 ---
+# Local break-glass accounts on a generic Linux host. This path also runs for
+# the plain Debian Molecule host, so it must be correct and idempotent on
+# Debian. ansible.builtin.user is idempotent: re-runs report `ok` once the
+# account, its shell and its group membership already match.
+#
+# An `admin` account is added to the `sudo` group (Debian's sudoers group);
+# any other role gets no supplementary group. `append: true` is paired with
+# `groups` only when a group is actually set — passing `append` without
+# `groups` is a no-op today but is rejected from ansible-core 2.21, so both
+# leaves are omitted together for non-admin accounts.
+#
+# Passwords are never defaulted here. An account is given a password only
+# when the caller supplies a vault-encrypted `password` hash on the entry;
+# accounts without one are created locked (no usable password) and a hash can
+# be added later. update_password: on_create means an existing account's
+# password is left untouched on subsequent runs.
 - name: "Users_aaa | linux | local break-glass accounts"
   ansible.builtin.user:
     name: "{{ item.name }}"
     shell: /bin/bash
-    groups: "{{ 'sudo' if item.role == 'admin' else omit }}"
-    append: true
+    state: present
+    groups: "{{ ['sudo'] if item.role == 'admin' else omit }}"
+    append: "{{ true if item.role == 'admin' else omit }}"
+    password: "{{ item.password | default(omit) }}"
+    update_password: on_create
   loop: "{{ users_aaa_local }}"
   loop_control:
     label: "{{ item.name }}"
+  no_log: true

@@ -1,12 +1,19 @@
 ---
-- name: "Users_aaa | fortios | RADIUS servers"
+# FortiGate RADIUS server entries. fortios_user_radius takes one RADIUS
+# server per call; the top-level `state` and `vdom` sit beside `user_radius`
+# (verified with ansible-doc). The `name` is the table key, `server` the
+# host, `timeout` an integer. 802.1X on a FortiGate is wireless/VPN policy
+# rather than wired NAC, so this file configures the RADIUS servers only —
+# wired 802.1X is a Cisco-switch concern (see the README).
+- name: "Users_aaa | fortios | RADIUS server entries"
   fortinet.fortios.fortios_user_radius:
-    vdom: root
+    vdom: "{{ fortios_vdom | default('root') }}"
+    state: present
     user_radius:
       name: "radius-{{ item.host }}"
       server: "{{ item.host }}"
       secret: "{{ item.secret }}"
-      timeout: "{{ item.timeout | default(5) }}"
+      timeout: "{{ item.timeout | default(5) | int }}"
   loop: "{{ users_aaa_servers }}"
   loop_control:
     label: "{{ item.host }}"

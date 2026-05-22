@@ -3,12 +3,29 @@
   hosts: all
   gather_facts: true
   tasks:
-    # The converge step above fails the scenario if the role errors, so
-    # reaching this play already proves the role loads and dispatches.
-    # Extend with real state assertions — see docs/adding-a-role.md.
-    - name: "Users_aaa | role converged without error"
+    # On the plain Debian test host the role resolves to linux.yml, which
+    # really creates the break-glass accounts from converge.yml. Verify the
+    # resulting state directly rather than just asserting the play ran.
+    - name: "Users_aaa | look up the break-glass accounts in passwd"
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ item }}"
+      loop:
+        - netadmin
+        - netviewer
+
+    - name: "Users_aaa | read the sudo group membership"
+      ansible.builtin.getent:
+        database: group
+        key: sudo
+
+    - name: "Users_aaa | accounts exist and the admin is in sudo"
       ansible.builtin.assert:
         that:
-          - true
-        success_msg: "'users_aaa' role applied cleanly on the test host."
-        fail_msg: "'users_aaa' role verification failed."
+          - "'netadmin' in getent_passwd"
+          - "'netviewer' in getent_passwd"
+          - getent_passwd['netadmin'][5] == '/bin/bash'
+          - "'netadmin' in getent_group['sudo'][2].split(',')"
+          - "'netviewer' not in getent_group['sudo'][2].split(',')"
+        success_msg: "'users_aaa' created the break-glass accounts as expected."
+        fail_msg: "'users_aaa' did not produce the expected local accounts."

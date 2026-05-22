@@ -1,10 +1,54 @@
 ---
-- name: "Users_aaa | srlinux | AAA RADIUS server group"
+# Nokia SR Linux AAA — RADIUS server-group and the authentication method.
+#
+# On SR Linux a RADIUS server-group is /system/aaa/server-group[name=radius]
+# of type `radius`. Its `server` list is keyed by the leaf `address`; each
+# entry carries a `network-instance` and a `radius` container holding the
+# auth/acct ports and `secret-key`. The previous scaffold built that list
+# with `map('dict_kv', 'address')`, which wraps each whole server dict as the
+# *value* of an `address` key — a malformed structure. Each server is now
+# declared at its own keyed path, mirroring the loop style of the vlans and
+# interfaces roles.
+#
+# nokia.srlinux.config has no ansible-doc schema for these gNMI paths, so the
+# paths below are a documented version assumption — see the README. Modelled
+# on the SR Linux 24.x `srl_nokia-aaa` YANG tree.
+
+- name: "Users_aaa | srlinux | declare the RADIUS server-group"
   nokia.srlinux.config:
     update:
-      - path: /system/aaa/server-group[name=radius]
+      - path: "/system/aaa/server-group[name=radius]"
         value:
           type: radius
-          server:
-            "{{ users_aaa_servers | map('community.general.dict_kv', 'address') | list }}"
+  when: users_aaa_servers | length > 0
+
+- name: "Users_aaa | srlinux | RADIUS server per host"
+  nokia.srlinux.config:
+    update:
+      - path: "/system/aaa/server-group[name=radius]/server[address={{ item.host }}]"
+        value:
+          network-instance: "{{ srlinux_aaa_netinst | default('mgmt') }}"
+          radius:
+            auth-port: 1812
+            acct-port: 1813
+            secret-key: "{{ item.secret }}"
+            retransmit-attempts: "{{ item.timeout | default(5) | int }}"
+  loop: "{{ users_aaa_servers }}"
+  loop_control:
+    label: "{{ item.host }}"
   no_log: true
+
+# Put RADIUS ahead of local in the system authentication method so wired
+# logins prefer RADIUS but fall back to the break-glass local accounts when
+# every server is unreachable. Skipped when no servers are defined.
+- name: "Users_aaa | srlinux | authentication method (radius then local)"
+  nokia.srlinux.config:
+    update:
+      - path: "/system/aaa/authentication"
+        value:
+          authentication-method:
+            - radius
+            - local
+  when:
+    - users_aaa_dot1x.enabled | bool
+    - users_aaa_servers | length > 0

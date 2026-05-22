@@ -1,0 +1,9 @@
+---
+# The MDS 9132T runs NX-OS but is a Fibre Channel SAN switch, physically
+# isolated from the LAN (docs/architecture-brief.md). It is not part of the
+# wired 802.1X NAC domain and its management AAA is handled out of band on
+# the OOB network, not by this role. Explicit no-op keeps the dispatch
+# contract intact — mirrors roles/interfaces/tasks/cisco_nxos.yml.
+- name: "Users_aaa | cisco_nxos | FC SAN switch is out of NAC scope (no-op)"
+  ansible.builtin.debug:
+    msg: "MDS 9132T is an air-gapped FC SAN switch; wired AAA/802.1X does not apply."
