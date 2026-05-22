@@ -6,13 +6,13 @@
     # On the plain Debian test host the role resolves to linux.yml, which
     # really creates the break-glass accounts from converge.yml. Verify the
     # resulting state directly rather than just asserting the play ran.
-    - name: "Users_aaa | look up the break-glass accounts in passwd"
+    #
+    # getent must read the WHOLE passwd database (no `key`): a keyed getent
+    # overwrites getent_passwd on every call, so looping it over the account
+    # names would leave the fact holding only the last name looked up.
+    - name: "Users_aaa | read the passwd database"
       ansible.builtin.getent:
         database: passwd
-        key: "{{ item }}"
-      loop:
-        - netadmin
-        - netviewer
 
     - name: "Users_aaa | read the sudo group membership"
       ansible.builtin.getent:
