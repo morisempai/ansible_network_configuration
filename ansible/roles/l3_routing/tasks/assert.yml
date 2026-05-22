@@ -1,6 +1,16 @@
 ---
-# Schema check for the l3_routing inputs. Runs after NetBox resolution so it
-# validates whatever actually feeds the device task.
+# Schema check for the l3_routing inputs. This pins the vendor-agnostic
+# interface: every tasks/<vendor>.yml file can assume each SVI has an
+# integer `vlan_id` in 1-4094 and a CIDR `address`, each static route a
+# CIDR `prefix` and an IP `next_hop`, and `l3_routing_ospf` a well-formed
+# `areas` list when present. Runs after NetBox resolution, so it validates
+# whatever actually feeds the device task.
+#
+# Address checks are deliberately regex-based, not ansible.utils.ipaddr:
+# `ipaddr` needs the netaddr library, and this assert runs on the plain
+# Linux Molecule host where netaddr is not guaranteed to be present.
+# The regexes catch malformed input (missing mask, junk) without it.
+
 - name: "L3_routing | assert | every SVI is well-formed"
   ansible.builtin.assert:
     quiet: true
@@ -10,32 +20,78 @@
       - item.vlan_id >= 1
       - item.vlan_id <= 4094
       - item.address is defined
-      - item.address | string | length > 0
+      - (item.address | string |
+         regex_search('^\d{1,3}(\.\d{1,3}){3}/\d{1,2}$')) is not none
+      - (item.description is not defined) or
+        (item.description | string | length > 0)
     fail_msg: >-
       Invalid l3_routing_svis entry {{ item }} — each SVI needs an integer
-      `vlan_id` (1-4094) and a non-empty `address`.
+      `vlan_id` (1-4094) and an `address` in host/prefix CIDR form
+      (e.g. 10.0.40.1/22). `description`, if set, must be non-empty.
   loop: "{{ l3_routing_svis }}"
   loop_control:
     label: "{{ item.vlan_id | default('?') }}"
+
+- name: "L3_routing | assert | SVI vlan_ids are unique"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - l3_routing_svis | map(attribute='vlan_id') | list | length
+        == l3_routing_svis | map(attribute='vlan_id') | unique | list | length
+    fail_msg: >-
+      Duplicate vlan_id in l3_routing_svis:
+      {{ l3_routing_svis | map(attribute='vlan_id') | list }}
 
 - name: "L3_routing | assert | every static route is well-formed"
   ansible.builtin.assert:
     quiet: true
     that:
       - item.prefix is defined
-      - item.prefix | string | length > 0
+      - (item.prefix | string |
+         regex_search('^\d{1,3}(\.\d{1,3}){3}/\d{1,2}$')) is not none
       - item.next_hop is defined
-      - item.next_hop | string | length > 0
+      - (item.next_hop | string |
+         regex_search('^\d{1,3}(\.\d{1,3}){3}$')) is not none
+      - (item.device is not defined) or
+        (item.device | string | length > 0)
     fail_msg: >-
       Invalid l3_routing_static entry {{ item }} — each route needs a
-      non-empty `prefix` and `next_hop`.
+      `prefix` in CIDR form (e.g. 0.0.0.0/0), a `next_hop` IPv4 address,
+      and an optional non-empty `device` (FortiGate egress interface).
   loop: "{{ l3_routing_static }}"
   loop_control:
     label: "{{ item.prefix | default('?') }}"
 
-- name: "L3_routing | assert | ospf is a mapping"
+- name: "L3_routing | assert | ospf profile is a well-formed mapping"
   ansible.builtin.assert:
     quiet: true
     that:
       - l3_routing_ospf is mapping
-    fail_msg: "l3_routing_ospf must be a mapping (got {{ l3_routing_ospf }})."
+      # process_id is templated through defaults/group_vars, so it can
+      # arrive as a string — coerce both sides before the numeric check.
+      - (l3_routing_ospf.process_id is not defined) or
+        (l3_routing_ospf.process_id | int | string
+         == l3_routing_ospf.process_id | string
+         and l3_routing_ospf.process_id | int >= 1)
+      - (l3_routing_ospf.areas is not defined) or
+        (l3_routing_ospf.areas is sequence
+         and l3_routing_ospf.areas is not string)
+    fail_msg: >-
+      Invalid l3_routing_ospf {{ l3_routing_ospf }} — it must be a mapping;
+      `process_id`, if set, a positive integer; `areas`, if set, a list.
+
+- name: "L3_routing | assert | every ospf area is well-formed"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.network is defined
+      - (item.network | string |
+         regex_search('^\d{1,3}(\.\d{1,3}){3}/\d{1,2}$')) is not none
+      - item.area is defined
+      - item.area | string | length > 0
+    fail_msg: >-
+      Invalid l3_routing_ospf.areas entry {{ item }} — each area needs a
+      `network` in CIDR form (e.g. 10.0.40.0/22) and an `area` id.
+  loop: "{{ l3_routing_ospf.areas | default([]) }}"
+  loop_control:
+    label: "{{ item.network | default('?') }}"

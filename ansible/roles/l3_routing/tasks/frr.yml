@@ -1,13 +1,37 @@
 ---
+# Layer-3 configuration for FRRouting hosts (the Linux-based lab switches,
+# docs/lab.md). FRR is a pure routing daemon, so static routes and OSPF map
+# straight onto its config; SVIs do not — see the note below.
+#
+# FRR config is pushed with ansible.netcommon.cli_config over the network_cli
+# connection (the frr.frr.frr cliconf plugin, ansible/requirements.yml).
+# cli_config diffs against the running config, so re-runs are idempotent.
+
+# SVIs on an FRR/Linux host are kernel VLAN interfaces (e.g. `vlan40`),
+# owned by the host network stack — the linux_base role — not by FRR. FRR
+# only routes on interfaces that already exist. This is an honest no-op,
+# mirroring the stub split in roles/vlans/tasks/frr.yml.
+- name: "L3_routing | frr | SVIs are kernel interfaces (no-op)"
+  ansible.builtin.debug:
+    msg: >-
+      SVIs on FRR/Linux hosts are kernel VLAN interfaces managed by
+      linux_base; FRR routes over them once they exist.
+  when: l3_routing_svis | length > 0
+
+# Static routes and OSPF — the part of the role FRR genuinely owns. The
+# template emits `ip route` lines and, when an OSPF profile is given, a
+# `router ospf` stanza with one `network ... area` line per area.
 - name: "L3_routing | frr | static routes and OSPF"
   ansible.netcommon.cli_config:
     config: |
       {% for r in l3_routing_static %}
       ip route {{ r.prefix }} {{ r.next_hop }}
       {% endfor %}
-      {% if l3_routing_ospf %}
+      {% if l3_routing_ospf | length > 0 %}
       router ospf
-       {% for a in l3_routing_ospf.areas | default([]) %}
+      {% for a in l3_routing_ospf.areas | default([]) %}
        network {{ a.network }} area {{ a.area }}
-       {% endfor %}
+      {% endfor %}
       {% endif %}
+  when:
+    - (l3_routing_static | length > 0) or (l3_routing_ospf | length > 0)

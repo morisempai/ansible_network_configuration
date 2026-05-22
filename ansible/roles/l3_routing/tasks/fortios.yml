@@ -1,7 +1,34 @@
 ---
+# Layer-3 configuration for the FortiGate gateways. At a regional site the
+# FortiGate is the L3 gateway for every VLAN (router-on-a-stick): the vlans
+# role creates each `vlan<id>` tagged sub-interface, and this role assigns
+# that sub-interface its gateway IP — the FortiGate equivalent of an SVI.
+# Static routes and OSPF complete the L3 picture.
+#
+# fortios_system_interface and fortios_router_static are per-object modules
+# (one API object per call), so those two are looped; fortios_router_ospf
+# is a single-object feature, configured in one call.
+
+# SVI equivalent — the gateway IP on the VLAN sub-interface. The interface
+# itself already exists (vlans role); state: present here only updates it.
+- name: "L3_routing | fortios | SVI gateway IP on the VLAN sub-interface"
+  fortinet.fortios.fortios_system_interface:
+    vdom: "{{ fortios_vdom | default('root') }}"
+    state: present
+    system_interface:
+      name: "vlan{{ item.vlan_id }}"
+      ip: "{{ item.address }}"
+      description: "{{ item.description | default(omit) }}"
+  loop: "{{ l3_routing_svis }}"
+  loop_control:
+    label: "vlan{{ item.vlan_id }}"
+
+# Static routes. fortios_router_static keys each route by seq_num; the loop
+# index gives a stable, 1-based sequence number. `device` is the egress
+# interface — required by FortiOS for a static route.
 - name: "L3_routing | fortios | static routes"
   fortinet.fortios.fortios_router_static:
-    vdom: root
+    vdom: "{{ fortios_vdom | default('root') }}"
     state: present
     router_static:
       seq_num: "{{ idx + 1 }}"
@@ -12,3 +39,61 @@
   loop_control:
     index_var: idx
     label: "{{ item.prefix }}"
+
+# OSPF — built in two steps because fortios_router_ospf wants integer-keyed
+# `area` and `network` tables, and FortiOS expects the network prefix as
+# "<address> <netmask>". The list-building loops below assemble those
+# tables; the apply task then configures the whole feature in one call.
+
+- name: "L3_routing | fortios | start OSPF area and network tables empty"
+  ansible.builtin.set_fact:
+    _l3_routing_fortios_ospf_areas: []
+    _l3_routing_fortios_ospf_networks: []
+  when: l3_routing_ospf | length > 0
+
+- name: "L3_routing | fortios | collect the distinct OSPF area ids"
+  ansible.builtin.set_fact:
+    _l3_routing_fortios_ospf_areas: >-
+      {{ _l3_routing_fortios_ospf_areas + [{'id': item}] }}
+  loop: >-
+    {{ l3_routing_ospf.areas | default([])
+       | map(attribute='area') | map('string') | unique | list }}
+  loop_control:
+    label: "{{ item }}"
+  when: l3_routing_ospf | length > 0
+
+- name: "L3_routing | fortios | build the OSPF network table"
+  ansible.builtin.set_fact:
+    _l3_routing_fortios_ospf_networks: >-
+      {{ _l3_routing_fortios_ospf_networks + [{
+           'id': idx + 1,
+           'prefix': item.network | split('/') | first ~ ' '
+                     ~ _netmask_for_plen[item.network | split('/') | last],
+           'area': item.area | string,
+         }] }}
+  loop: "{{ l3_routing_ospf.areas | default([]) }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.network }}"
+  vars:
+    # CIDR prefix-length -> dotted netmask. Covers every length the VLAN
+    # scheme in docs/architecture-brief.md uses (and then some); avoids a
+    # netaddr dependency just to format an OSPF network statement.
+    _netmask_for_plen:
+      "8": "255.0.0.0"
+      "16": "255.255.0.0"
+      "22": "255.255.252.0"
+      "23": "255.255.254.0"
+      "24": "255.255.255.0"
+      "25": "255.255.255.128"
+      "30": "255.255.255.252"
+      "32": "255.255.255.255"
+  when: l3_routing_ospf | length > 0
+
+- name: "L3_routing | fortios | apply the OSPF process, areas and networks"
+  fortinet.fortios.fortios_router_ospf:
+    vdom: "{{ fortios_vdom | default('root') }}"
+    router_ospf:
+      area: "{{ _l3_routing_fortios_ospf_areas }}"
+      network: "{{ _l3_routing_fortios_ospf_networks }}"
+  when: l3_routing_ospf | length > 0
