@@ -47,17 +47,43 @@
     state: merged
   when: l3_routing_static | length > 0
 
-# OSPF — one process with the network/area advertisements. ios_ospfv2
-# expects the area id as a string, so to_string coerces an integer area.
-# Skipped entirely when l3_routing_ospf is the empty default.
+# OSPF — one process advertising the configured networks. ios_ospfv2 wants
+# each network as a plain `address` + `wildcard_bits` pair, never a CIDR, so
+# the area prefixes are split here with a CIDR-length -> wildcard-mask table
+# (the inverse of the netmask table tasks/fortios.yml uses). Skipped
+# entirely when l3_routing_ospf is the empty default.
+- name: "L3_routing | cisco_ios | build the OSPF network list"
+  ansible.builtin.set_fact:
+    _l3_routing_ios_ospf_networks: >-
+      {{ _l3_routing_ios_ospf_networks | default([]) + [{
+           'address': item.network | split('/') | first,
+           'wildcard_bits':
+             _l3_routing_ios_wildcard[item.network | split('/') | last],
+           'area': item.area | string,
+         }] }}
+  loop: "{{ l3_routing_ospf.areas | default([]) }}"
+  loop_control:
+    label: "{{ item.network }}"
+  vars:
+    # CIDR prefix-length -> wildcard mask (the inverse of the subnet mask).
+    # Covers every length the VLAN scheme in docs/architecture-brief.md
+    # uses; a prefix length outside this table needs a new entry.
+    _l3_routing_ios_wildcard:
+      "8": "0.255.255.255"
+      "16": "0.0.255.255"
+      "22": "0.0.3.255"
+      "23": "0.0.1.255"
+      "24": "0.0.0.255"
+      "25": "0.0.0.127"
+      "30": "0.0.0.3"
+      "32": "0.0.0.0"
+  when: l3_routing_ospf | length > 0
+
 - name: "L3_routing | cisco_ios | OSPF process and networks"
   cisco.ios.ios_ospfv2:
     config:
       processes:
         - process_id: "{{ l3_routing_ospf.process_id | default(1) | int }}"
-          network: >-
-            {{ l3_routing_ospf.areas | default([])
-               | json_query('[].{address: network,
-                                  area: to_string(area)}') }}
+          network: "{{ _l3_routing_ios_ospf_networks | default([]) }}"
     state: merged
   when: l3_routing_ospf | length > 0

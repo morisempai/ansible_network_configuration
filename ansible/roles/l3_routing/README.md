@@ -153,7 +153,9 @@ runs and the `host_vars` / `defaults` values stand.
   construction (every module verified against `ansible-doc`; SR Linux gNMI
   paths follow the SR Linux >= 23.3 model used across this repo) and are
   exercised against the Containerlab lab — see `docs/lab.md`.
-- **FortiGate OSPF netmask table.** FortiOS wants the OSPF network prefix
-  as `<address> <netmask>`. `tasks/fortios.yml` carries a CIDR-length →
-  netmask table covering the lengths the VLAN scheme uses (`/8`–`/32`); a
-  prefix length outside that table needs a new entry.
+- **OSPF prefix-mask tables.** Neither `ios_ospfv2` nor FortiOS accepts a
+  CIDR for an OSPF network — Cisco IOS wants `address` + `wildcard_bits`,
+  FortiOS wants `<address> <netmask>`. `tasks/cisco_ios.yml` and
+  `tasks/fortios.yml` each carry a CIDR-length → mask table covering the
+  lengths the VLAN scheme uses (`/8`–`/32`); a prefix length outside a
+  table needs a new entry.
