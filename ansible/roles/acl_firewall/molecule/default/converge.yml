@@ -4,14 +4,27 @@
   gather_facts: true
   vars:
     # Drives tasks/assert.yml (schema validation). On a plain Linux host with
-    # no ansible_network_os the role validates the rules, then resolves to a
-    # no-op — there is no device path.
+    # no ansible_network_os the role validates the policy, then correctly
+    # resolves to a no-op — there is no device path. The rules below exercise
+    # every service shape: tcp/port, udp/port, a bare protocol, and an
+    # explicit deny above the deny-by-default baseline.
+    acl_firewall_default_action: deny
     acl_firewall_rules:
       - name: corp-to-servers-https
         src: 10.0.40.0/22
         dst: 10.0.20.0/24
         service: tcp/443
         action: allow
+      - name: corp-dns
+        src: 10.0.40.0/22
+        dst: 10.0.10.20/32
+        service: udp/53
+        action: allow
+      - name: block-guest-to-corp
+        src: 192.168.70.0/24
+        dst: 10.0.40.0/22
+        service: ip
+        action: deny
   tasks:
     - name: "Apply the acl_firewall role"
       ansible.builtin.include_role:

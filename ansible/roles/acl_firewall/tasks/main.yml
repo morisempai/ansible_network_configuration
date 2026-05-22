@@ -5,11 +5,15 @@
   ansible.builtin.include_tasks: netbox.yml
   when: netbox_enabled | default(false) | bool
 
-# Fail fast on malformed inputs before any device is touched.
+# Fail fast on a malformed policy before touching any device. Always runs —
+# the default action is validated even when the allow-list is empty, since
+# deny-by-default is itself a policy this role must apply.
 - name: "Acl_firewall | validate role inputs"
   ansible.builtin.include_tasks: assert.yml
 
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
+# Not gated on the rule count: the deny-by-default posture must still be
+# rendered on a device even when acl_firewall_rules is empty.
 - name: "Acl_firewall | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
   vars:

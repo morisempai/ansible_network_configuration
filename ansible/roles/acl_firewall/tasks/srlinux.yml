@@ -1,17 +1,63 @@
 ---
-- name: "Acl_firewall | srlinux | IPv4 ACL entries"
+# Nokia SR Linux inter-VLAN ACL. An SR Linux ACL is an ordered list of
+# entries under an ipv4-filter; lower sequence-id wins. nokia.srlinux.config
+# is idempotent per path, so each entry is set independently.
+#
+# The vendor-agnostic rule list is translated here:
+#   - action allow -> action accept, action deny -> action drop
+#   - service proto/port -> match/protocol and (tcp/udp) a destination-port
+#   - src/dst CIDR -> match/source-ip/prefix and match/destination-ip/prefix
+# A final catch-all entry renders the deny-by-default posture, since an
+# SR Linux ACL has no chain-level default — traffic matching no entry would
+# otherwise be permitted.
+#
+# SR Linux gNMI paths cannot be verified with ansible-doc (nokia.srlinux.config
+# accepts arbitrary paths); the /acl/ipv4-filter model below targets
+# SR Linux 23.10+ — see the README "Known limitations".
+
+- name: "Acl_firewall | srlinux | inter-VLAN ACL entries"
   nokia.srlinux.config:
     update:
       - path: "/acl/ipv4-filter[name=inter-vlan]/entry[sequence-id={{ (idx + 1) * 10 }}]"
         value:
+          description: "{{ item.name }}"
           action:
             "{{ 'accept' if item.action == 'allow' else 'drop' }}": {}
           match:
-            source-ip:
-              prefix: "{{ item.src }}"
-            destination-ip:
-              prefix: "{{ item.dst }}"
+            ipv4:
+              source-ip:
+                prefix: "{{ item.src }}"
+              destination-ip:
+                prefix: "{{ item.dst }}"
+              protocol: "{{ _proto }}"
+            transport: "{{ _transport }}"
   loop: "{{ acl_firewall_rules }}"
   loop_control:
     index_var: idx
     label: "{{ item.name }}"
+  vars:
+    # service: 'tcp/443' -> protocol 'tcp', port 443; 'ip' has no L4 match.
+    _svc_parts: "{{ item.service | string | lower | split('/') }}"
+    _proto: "{{ _svc_parts[0] }}"
+    # transport (L4 port) match only applies to tcp / udp; omit it otherwise.
+    _transport: >-
+      {{ {'destination-port': {'value': _svc_parts[1] | int}}
+         if (_svc_parts | length > 1) else omit }}
+
+# Catch-all entry — the highest sequence-id, so it matches last. Renders the
+# deny-by-default baseline (drop) or an explicit accept-all if a site is
+# deliberately allow-by-default.
+- name: "Acl_firewall | srlinux | default-action catch-all ACL entry"
+  nokia.srlinux.config:
+    update:
+      - path: "/acl/ipv4-filter[name=inter-vlan]/entry[sequence-id=65535]"
+        value:
+          description: acl_firewall-default-action
+          action:
+            "{{ 'accept' if acl_firewall_default_action == 'allow' else 'drop' }}": {}
+          match:
+            ipv4:
+              source-ip:
+                prefix: 0.0.0.0/0
+              destination-ip:
+                prefix: 0.0.0.0/0

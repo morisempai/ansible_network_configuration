@@ -1,8 +1,28 @@
 ---
+# Inputs for the acl_firewall role.
+#
+# The estate is deny-by-default (docs/architecture-brief.md): every L3
+# boundary drops inter-VLAN traffic unless an explicit allow rule exists.
+# These two variables are the vendor-agnostic interface every
+# tasks/<vendor>.yml file consumes, and tasks/assert.yml enforces them.
+#
+# acl_firewall_default_action — the baseline action for traffic that matches
+# no explicit rule. 'allow' or 'deny'; the network policy is 'deny'. Defaulted
+# from acl_default_action (group_vars/network.yml) so the policy posture lives
+# in one place network-wide.
 acl_firewall_default_action: "{{ acl_default_action | default('deny') }}"
+
+# acl_firewall_rules — the explicit allow-list (and any explicit denies that
+# must sit above the default action). A list of objects:
+#
+#   acl_firewall_rules:
+#     - name: corp-to-servers-https   # required, non-empty, unique
+#       src: 10.0.40.0/22             # required, source CIDR (or 0.0.0.0/0)
+#       dst: 10.0.20.0/24             # required, destination CIDR
+#       service: tcp/443              # required, proto/port or proto ('ip')
+#       action: allow                 # required, 'allow' or 'deny'
+#
+# `service` is `proto/port` for tcp/udp (e.g. tcp/443, udp/53) or a bare
+# protocol for portless matches (`ip`, `icmp`). When netbox_enabled is true,
+# tasks/netbox.yml replaces both variables from the device config context.
 acl_firewall_rules: []
-# - name: corp-to-servers-https
-#   src: 10.0.40.0/22
-#   dst: 10.0.20.0/24
-#   service: tcp/443
-#   action: allow

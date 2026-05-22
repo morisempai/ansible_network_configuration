@@ -1,12 +1,74 @@
 ---
-- name: "Acl_firewall | cisco_ios | extended ACL allow-list"
+# C9300 core inter-VLAN ACL. cisco.ios.ios_acls is a resource module: it takes
+# the full desired ACE list for the named ACL in a single call.
+#
+# The vendor-agnostic rule list is translated to IOS ACEs here:
+#   - action allow -> grant permit, action deny -> grant deny
+#   - service proto/port -> protocol + (for tcp/udp) a destination eq match
+#   - a CIDR src/dst -> address + wildcard_bits, or `any` for 0.0.0.0/0
+# IOS wildcard bits are the bitwise inverse of the subnet mask; they are
+# computed in pure Jinja because netaddr (the ansible.utils.ipaddr backend)
+# is not installed in this environment.
+#
+# state: merged adds and updates the listed ACEs without pruning unlisted
+# entries — decommissioning a rule is a deliberate, separate action (README).
+# Binding the ACL to an SVI/interface is the l3_routing role's job.
+
+- name: "Acl_firewall | cisco_ios | build the inter-VLAN ACE list"
+  ansible.builtin.set_fact:
+    _acl_firewall_ios_aces: >-
+      {{ _acl_firewall_ios_aces | default([]) + [
+           {
+             'sequence': (idx + 1) * 10,
+             'grant': ('permit' if item.action == 'allow' else 'deny'),
+             'protocol': _proto,
+           }
+           | combine(
+               {'source': {'any': true}} if _src_pfx == '0'
+               else {'source': {'address': _src_net,
+                                 'wildcard_bits': _src_wild}})
+           | combine(
+               {'destination':
+                 ({'any': true} if _dst_pfx == '0'
+                  else {'address': _dst_net, 'wildcard_bits': _dst_wild})
+                 | combine({'port_protocol': {'eq': _port}}
+                           if _port | length > 0 else {})})
+         ] }}
+  loop: "{{ acl_firewall_rules }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.name }}"
+  vars:
+    # service: 'tcp/443' -> proto 'tcp', port '443'; 'ip' -> proto 'ip', no port
+    _svc_parts: "{{ item.service | string | lower | split('/') }}"
+    _proto: "{{ _svc_parts[0] }}"
+    _port: "{{ _svc_parts[1] if _svc_parts | length > 1 else '' }}"
+    # CIDR -> network address + prefix length.
+    _src_net: "{{ item.src | string | split('/') | first }}"
+    _src_pfx: "{{ item.src | string | split('/') | last }}"
+    _dst_net: "{{ item.dst | string | split('/') | first }}"
+    _dst_pfx: "{{ item.dst | string | split('/') | last }}"
+    # IOS wildcard bits = inverse of the subnet mask, per octet, in pure Jinja.
+    _src_wild: >-
+      {%- set p = _src_pfx | int -%}{%- set o = [] -%}
+      {%- for i in range(4) -%}
+      {%- set b = [[p - i * 8, 8] | min, 0] | max -%}
+      {%- set _ = o.append(255 - (256 - 2 ** (8 - b)) % 256) -%}
+      {%- endfor -%}{{ o | join('.') }}
+    _dst_wild: >-
+      {%- set p = _dst_pfx | int -%}{%- set o = [] -%}
+      {%- for i in range(4) -%}
+      {%- set b = [[p - i * 8, 8] | min, 0] | max -%}
+      {%- set _ = o.append(255 - (256 - 2 ** (8 - b)) % 256) -%}
+      {%- endfor -%}{{ o | join('.') }}
+
+- name: "Acl_firewall | cisco_ios | enforce the inter-VLAN extended ACL"
   cisco.ios.ios_acls:
     config:
       - afi: ipv4
         acls:
           - name: INTER_VLAN
             acl_type: extended
-            aces:
-              "{{ acl_firewall_rules | map('community.general.dict_kv', 'grant') | list }}"
+            aces: "{{ _acl_firewall_ios_aces | default([]) }}"
     state: merged
-  when: acl_firewall_rules | length > 0
+  when: _acl_firewall_ios_aces | default([]) | length > 0
