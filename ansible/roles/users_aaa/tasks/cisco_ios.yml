@@ -25,12 +25,18 @@
 # Collect the RADIUS servers into a named group so the dot1x method lists
 # below reference exactly the servers in users_aaa_servers. Skipped when no
 # servers are defined — there is nothing to authenticate against.
+#
+# Each `server name` must match the name of a `radius server` block defined
+# above, which is `host` with dots replaced by dashes — so the same
+# replacement is applied here, otherwise the group references a server that
+# does not exist.
 - name: "Users_aaa | cisco_ios | AAA RADIUS server group"
   cisco.ios.ios_config:
     parents: "aaa group server radius radius-servers"
     lines: >-
       {{ users_aaa_servers
          | map(attribute='host')
+         | map('regex_replace', '\.', '-')
          | map('regex_replace', '^(.+)$', 'server name \1')
          | list }}
   when: users_aaa_servers | length > 0
