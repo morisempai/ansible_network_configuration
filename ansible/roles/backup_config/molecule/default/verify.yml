@@ -5,10 +5,26 @@
   tasks:
     # The converge step above fails the scenario if the role errors, so
     # reaching this play already proves the role loads and dispatches.
-    # Extend with real state assertions — see docs/adding-a-role.md.
     - name: "Backup_config | role converged without error"
       ansible.builtin.assert:
         that:
           - true
         success_msg: "'backup_config' role applied cleanly on the test host."
         fail_msg: "'backup_config' role verification failed."
+
+    # Real state assertion: the role creates the per-host backup directory on
+    # every host before dispatching, so it must exist on the control node
+    # even though the Linux test host itself has no device backup path.
+    - name: "Backup_config | per-host backup directory was created"
+      ansible.builtin.stat:
+        path: "/tmp/molecule-backups/{{ inventory_hostname }}"
+      delegate_to: localhost
+      register: backup_config_verify_dir
+
+    - name: "Backup_config | assert the backup directory exists"
+      ansible.builtin.assert:
+        that:
+          - backup_config_verify_dir.stat.exists
+          - backup_config_verify_dir.stat.isdir
+        success_msg: "Backup directory created for {{ inventory_hostname }}."
+        fail_msg: "Expected backup directory for {{ inventory_hostname }} is missing."

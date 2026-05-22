@@ -1,15 +1,20 @@
 ---
-- name: "Backup_config | srlinux | fetch running config"
+# Nokia SR Linux has no flat "running-config" text — its configuration is a
+# structured datastore. nokia.srlinux.get reads the running datastore via
+# gNMI/JSON-RPC (a pure read, safe under --check) and returns one entry per
+# requested path under `result`; the whole tree is written as JSON.
+- name: "Backup_config | srlinux | fetch running datastore"
   nokia.srlinux.get:
     paths:
       - path: /
         datastore: running
   register: backup_config_srl_running
+  check_mode: false
 
-- name: "Backup_config | srlinux | write config to file"
+- name: "Backup_config | srlinux | write running datastore to the backup tree"
   ansible.builtin.copy:
     dest: >-
       {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.json
-    content: "{{ backup_config_srl_running.result | to_nice_json }}"
+    content: "{{ backup_config_srl_running.result | to_nice_json }}\n"
     mode: "0640"
   delegate_to: localhost

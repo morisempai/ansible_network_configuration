@@ -1,13 +1,33 @@
 ---
 # Schema check for the backup_config inputs. Runs after NetBox resolution so
-# it validates whatever actually feeds the device task.
+# it validates whatever actually feeds the device tasks.
+#
+# Templating gotcha (see memory/ansible_templating_gotcha.md): a templated
+# scalar default renders as a STRING. backup_config_git_push survives as a
+# real bool from defaults/main.yml, but tasks/netbox.yml re-sets it through a
+# folded `>-` scalar, so after NetBox resolution it can be the string
+# "true"/"false". The assert therefore accepts a real bool OR a string that
+# `bool` parses cleanly, and the next task normalises it back to a real bool
+# so `when: backup_config_git_push | bool` downstream is unambiguous.
 - name: "Backup_config | assert | inputs are well-formed"
   ansible.builtin.assert:
     quiet: true
     that:
+      - backup_config_dir is defined
       - backup_config_dir | string | length > 0
-      - backup_config_git_push is boolean
+      - backup_config_timestamp is defined
+      - backup_config_timestamp | string | length > 0
+      - backup_config_git_push is defined
+      - (backup_config_git_push is boolean) or
+        (backup_config_git_push | string | lower
+         in ['true', 'false', 'yes', 'no'])
     fail_msg: >-
-      backup_config_dir must be a non-empty path and backup_config_git_push
-      a boolean (got dir='{{ backup_config_dir }}',
-      git_push='{{ backup_config_git_push }}').
+      backup_config_dir and backup_config_timestamp must be non-empty, and
+      backup_config_git_push must be a boolean (got dir='{{ backup_config_dir
+      | default("<undefined>") }}', timestamp='{{ backup_config_timestamp
+      | default("<undefined>") }}', git_push='{{ backup_config_git_push
+      | default("<undefined>") }}').
+
+- name: "Backup_config | assert | normalise git_push to a real boolean"
+  ansible.builtin.set_fact:
+    backup_config_git_push: "{{ backup_config_git_push | bool }}"

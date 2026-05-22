@@ -1,4 +1,28 @@
 ---
+# Inputs for the backup_config role.
+#
+# This is an OUTPUT role: it fetches the running configuration from every
+# network device and writes it to a git-tracked backup tree. It runs first in
+# site.yml so there is always a known-good config to roll back to before any
+# change is applied (docs/testing.md, "Backup before change").
+#
+# The three variables below are the vendor-agnostic interface; tasks/assert.yml
+# enforces them and every tasks/<vendor>.yml file consumes them.
+
+# Destination directory on the CONTROL NODE for the backup tree. Every vendor
+# task writes its file here via delegate_to: localhost. Defaulted relative to
+# the playbook so a checkout works with no configuration; override per
+# environment (or via NetBox config context) to point at the dedicated backup
+# repository. The role writes <dir>/<hostname>/<hostname>-<timestamp>.<ext>.
 backup_config_dir: "{{ playbook_dir }}/../../backups"
+
+# Timestamp stamped into every backup filename. Resolved once per run so a
+# single site.yml run groups all devices under one timestamp. Run metadata,
+# not device data — never sourced from NetBox.
 backup_config_timestamp: "{{ '%Y%m%d-%H%M%S' | strftime }}"
+
+# When true, after every device has written its file the role stages, commits
+# and pushes backup_config_dir to its git repository (tasks/git.yml). The
+# directory must already be a git work tree with a configured remote. When
+# false (the default) the role only writes files locally.
 backup_config_git_push: false
