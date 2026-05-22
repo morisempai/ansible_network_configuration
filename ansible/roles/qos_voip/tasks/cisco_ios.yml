@@ -1,10 +1,36 @@
 ---
-- name: "Qos_voip | cisco_ios | class-map + policy-map for voice"
+# Cisco IOS / IOS-XE QoS for voice (C9300 core, C9200 access).
+#
+# IOS has no resource module for MQC (Modular QoS CLI) class-maps and
+# policy-maps, so this uses cisco.ios.ios_config with explicit `parents` —
+# one task per configuration section so the module matches each block against
+# the running-config and stays idempotent. The command text must match the
+# device's running-config verbatim, hence the leading-space-free `lines`
+# under their `parents` (IOS renders sub-commands indented; ios_config
+# handles the indentation itself).
+#
+# What this builds:
+#   class-map VOICE  — matches the voice VLAN
+#   policy-map QOS-VOICE — marks matched traffic with the configured DSCP and
+#                          gives it a strict-priority (LLQ) queue
+#
+# Scope: this DEFINES the policy. Binding it to interfaces with
+# `service-policy output QOS-VOICE` is the interfaces role's job — that role
+# owns interface configuration. See the role README ("Scope").
+
+- name: "Qos_voip | cisco_ios | class-map matching the voice VLAN"
   cisco.ios.ios_config:
+    parents: "class-map match-any VOICE"
     lines:
-      - class-map match-any VOICE
-      - " match vlan {{ qos_voip_vlan_id }}"
-      - policy-map QOS-OUT
-      - " class VOICE"
-      - "  set dscp {{ qos_voip_marking }}"
-      - "  priority percent 30"
+      - "match vlan {{ qos_voip_vlan_id | int }}"
+    match: line
+
+- name: "Qos_voip | cisco_ios | policy-map marking and prioritising voice"
+  cisco.ios.ios_config:
+    parents:
+      - "policy-map QOS-VOICE"
+      - "class VOICE"
+    lines:
+      - "set dscp {{ qos_voip_marking | lower }}"
+      - "priority percent 30"
+    match: line

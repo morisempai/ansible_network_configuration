@@ -1,0 +1,9 @@
+---
+# The MDS 9132T runs NX-OS but is a Fibre Channel SAN switch, physically
+# isolated from the LAN (docs/architecture-brief.md). It carries no Ethernet
+# traffic and no VoIP VLAN, so voice QoS does not apply. Explicit no-op keeps
+# the dispatch contract intact — mirrors vlans/tasks/cisco_nxos.yml and
+# interfaces/tasks/cisco_nxos.yml.
+- name: "Qos_voip | cisco_nxos | FC SAN switch carries no voice traffic (no-op)"
+  ansible.builtin.debug:
+    msg: "MDS 9132T is Fibre Channel only; VoIP QoS does not apply."

@@ -1,12 +1,54 @@
 ---
-- name: "Qos_voip | fortios | traffic shaper for voice"
-  fortinet.fortios.fortios_firewall_shaper_trafficshaper:
-    vdom: root
+# FortiGate QoS for voice (200F at HQ, 100F at the regional sites).
+#
+# On FortiOS, QoS is delivered by a *traffic shaper* attached to a firewall
+# policy. This role declares a shared traffic shaper named `voice-shaper`
+# with a guaranteed bandwidth and a high scheduling priority, and has it
+# re-mark matched traffic with the configured DSCP (`diffserv`/`diffservcode`).
+#
+# Scope: this DEFINES the shaper. Referencing it from a firewall policy
+# (`traffic-shaper`/`traffic-shaper-reverse`) is policy configuration owned by
+# the acl_firewall role. See the role README ("Scope").
+#
+# diffservcode is the FortiOS DiffServ field: a 6-bit binary string, not a
+# DSCP keyword. _qos_voip_dscp_bits below maps every DSCP class tasks/assert.yml
+# accepts to its 6-bit value; the lookup is exact because assert.yml already
+# guaranteed the marking is one of these keys.
+- name: "Qos_voip | fortios | shared traffic shaper for voice"
+  fortinet.fortios.fortios_firewall_shaper_traffic_shaper:
+    vdom: "{{ fortios_vdom | default('root') }}"
     state: present
-    firewall_shaper_trafficshaper:
+    firewall_shaper_traffic_shaper:
       name: voice-shaper
+      bandwidth_unit: kbps
       guaranteed_bandwidth: 1000
       maximum_bandwidth: 10000
       priority: high
       diffserv: enable
-      diffservcode: "{{ '101110' if qos_voip_marking == 'ef' else '000000' }}"
+      diffservcode: "{{ _qos_voip_dscp_bits[qos_voip_marking | lower] }}"
+  vars:
+    # DSCP class -> 6-bit DiffServ code point (binary string).
+    _qos_voip_dscp_bits:
+      default: "000000"
+      be: "000000"
+      cs0: "000000"
+      cs1: "001000"
+      cs2: "010000"
+      cs3: "011000"
+      cs4: "100000"
+      cs5: "101000"
+      cs6: "110000"
+      cs7: "111000"
+      af11: "001010"
+      af12: "001100"
+      af13: "001110"
+      af21: "010010"
+      af22: "010100"
+      af23: "010110"
+      af31: "011010"
+      af32: "011100"
+      af33: "011110"
+      af41: "100010"
+      af42: "100100"
+      af43: "100110"
+      ef: "101110"

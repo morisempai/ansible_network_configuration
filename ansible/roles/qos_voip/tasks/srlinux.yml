@@ -1,9 +1,53 @@
 ---
-- name: "Qos_voip | srlinux | DSCP classifier for voice"
+# Nokia SR Linux QoS classification for voice.
+#
+# On SR Linux, QoS classification is a DSCP policy under /qos: a dscp-policy
+# maps an inbound DSCP code point to an internal forwarding-class. This role
+# declares the `voice` policy that steers the configured DSCP onto fc7, the
+# highest-priority forwarding class (default strict-priority scheduling).
+#
+# Scope: this DEFINES the classifier policy. Binding it to interface inputs
+# (interface > qos > input > classifiers > dscp-policy) is interface
+# configuration owned by the interfaces role. See the role README ("Scope").
+#
+# nokia.srlinux.config writes raw gNMI paths — there is no schema to validate
+# against with ansible-doc, so this path is correct *by construction* against
+# the SR Linux QoS YANG model. The SR Linux release assumption is documented
+# in the role README. The dscp list is keyed by a NUMERIC code point (0-63),
+# not a DSCP keyword, so _qos_voip_dscp_value maps every class assert.yml
+# accepts to its decimal value; the lookup is exact because assert.yml already
+# guaranteed the marking is one of these keys.
+- name: "Qos_voip | srlinux | DSCP classifier policy for voice"
   nokia.srlinux.config:
     update:
       - path: "/qos/classifiers/dscp-policy[name=voice]"
         value:
-          dscp:
-            - value: "{{ qos_voip_marking }}"
+          dscp-policy-entry:
+            - dscp-value: "{{ _qos_voip_dscp_value[qos_voip_marking | lower] }}"
               forwarding-class: fc7
+  vars:
+    # DSCP class -> decimal code point (0-63).
+    _qos_voip_dscp_value:
+      default: 0
+      be: 0
+      cs0: 0
+      cs1: 8
+      cs2: 16
+      cs3: 24
+      cs4: 32
+      cs5: 40
+      cs6: 48
+      cs7: 56
+      af11: 10
+      af12: 12
+      af13: 14
+      af21: 18
+      af22: 20
+      af23: 22
+      af31: 26
+      af32: 28
+      af33: 30
+      af41: 34
+      af42: 36
+      af43: 38
+      ef: 46

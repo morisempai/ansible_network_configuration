@@ -1,3 +1,24 @@
 ---
+# Inputs for the qos_voip role.
+#
+# This role enforces one piece of QoS intent from the architecture brief:
+# voice traffic on the VoIP VLAN gets a recognised DSCP marking and priority
+# treatment so it survives congestion. Two variables form the vendor-agnostic
+# interface that every tasks/<vendor>.yml file consumes and tasks/assert.yml
+# enforces:
+#
+# qos_voip_vlan_id — the VLAN that carries voice traffic. Integer 1-4094.
+#   Defaults to the network-wide `qos_voip_vlan` from group_vars/network.yml
+#   (VLAN 60 per docs/architecture-brief.md). NOTE: a templated scalar default
+#   renders as a *string* — tasks/assert.yml and the vendor files coerce it.
 qos_voip_vlan_id: "{{ qos_voip_vlan | default(60) }}"
+
+# qos_voip_marking — the DSCP class voice traffic is marked with. A DSCP
+#   keyword: `ef` (the brief's choice for voice), a class-selector `csN`, an
+#   assured-forwarding class `afNN`, or `default`/`be`. Defaults to the
+#   network-wide `qos_voip_dscp` from group_vars/network.yml.
 qos_voip_marking: "{{ qos_voip_dscp | default('ef') }}"
+
+# When netbox_enabled is true, tasks/netbox.yml replaces both values with the
+# `qos_voip_vlan` / `qos_voip_dscp` keys from the device's NetBox config
+# context. See docs/netbox.md.
