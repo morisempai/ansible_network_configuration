@@ -1,18 +1,38 @@
 ---
-# Schema check for the windows_ad inputs. Runs after NetBox resolution.
-# windows_ad_safe_mode_password has no default on purpose — it must come from
-# vault, and this assert fails fast if it is missing.
-- name: "Windows_ad | assert | inputs are well-formed"
+# Schema check for the windows_ad inputs. Runs after NetBox resolution and
+# before any host is promoted, so a malformed input fails the play instead
+# of half-promoting a domain controller.
+#
+# Templating gotcha (see memory/ansible_templating_gotcha.md): a value
+# resolved through a templated default in tasks/netbox.yml comes back as a
+# STRING ("true"/"false"), not a native bool. The boolean asserts below
+# therefore coerce with `| bool` rather than relying on `is boolean`.
+
+- name: "Windows_ad | assert | domain name is well-formed"
   ansible.builtin.assert:
     quiet: true
     that:
+      - windows_ad_domain is defined
       - windows_ad_domain | string | length > 0
       - "'.' in (windows_ad_domain | string)"
-      - windows_ad_is_primary is boolean
-      - windows_ad_is_primary or (windows_ad_replica_of | string | length > 0)
     fail_msg: >-
-      windows_ad_domain must be a dotted domain name, windows_ad_is_primary a
-      boolean, and windows_ad_replica_of set when this host is not primary.
+      windows_ad_domain must be a non-empty dotted (FQDN) domain name, e.g.
+      "corp.example.internal" - got "{{ windows_ad_domain | default('<undefined>') }}".
+
+- name: "Windows_ad | assert | primary/replica inputs are coherent"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      # `| bool` accepts both native booleans and the "true"/"false"
+      # strings produced by a templated config-context default.
+      - windows_ad_is_primary | bool in [true, false]
+      # A replica (not primary) must name the DC it replicates from.
+      - (windows_ad_is_primary | bool) or
+        (windows_ad_replica_of | string | length > 0)
+    fail_msg: >-
+      windows_ad_is_primary must be a boolean, and a non-primary host must
+      set windows_ad_replica_of to the FQDN of an existing domain
+      controller to replicate from.
 
 - name: "Windows_ad | assert | safe mode password is provided"
   ansible.builtin.assert:
@@ -21,5 +41,22 @@
       - windows_ad_safe_mode_password is defined
       - windows_ad_safe_mode_password | default('') | string | length > 0
     fail_msg: >-
-      windows_ad_safe_mode_password is required (no default — supply it from
-      vault).
+      windows_ad_safe_mode_password (the DSRM password) is required on every
+      domain controller. It has no default - supply it from Ansible Vault.
+
+# A replica promotion authenticates against the live domain, so it needs
+# domain-admin join credentials. The primary creates a new forest and does
+# not, so these are only required when windows_ad_is_primary is false.
+- name: "Windows_ad | assert | replica join credentials are provided"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - windows_ad_join_user is defined
+      - windows_ad_join_user | default('') | string | length > 0
+      - windows_ad_join_password is defined
+      - windows_ad_join_password | default('') | string | length > 0
+    fail_msg: >-
+      windows_ad_join_user and windows_ad_join_password are required to
+      promote a replica domain controller. They have no defaults - supply
+      them from Ansible Vault.
+  when: not (windows_ad_is_primary | bool)
