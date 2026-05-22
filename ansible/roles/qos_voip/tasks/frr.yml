@@ -1,6 +1,8 @@
 ---
-# QoS on a Linux-based switch is tc/qdisc, not FRR. Stub keeps the dispatch
-# contract intact; tc rules belong in linux_base if FRR hosts carry voice.
-- name: "Qos_voip | frr | QoS handled by host tc (no-op)"
+# FRR is a routing daemon and has no QoS model. QoS on a Linux/FRR host is
+# kernel traffic control — `tc` qdisc/class/filter — owned by the host network
+# stack (the linux_base role), not FRR. Explicit no-op keeps the dispatch
+# contract intact — mirrors vlans/tasks/frr.yml and interfaces/tasks/frr.yml.
+- name: "Qos_voip | frr | QoS is kernel tc, not FRR (no-op)"
   ansible.builtin.debug:
-    msg: "FRR/Linux QoS is delegated to tc qdisc; see roles/linux_base."
+    msg: "QoS on FRR/Linux hosts is managed by linux_base (tc qdisc)."
