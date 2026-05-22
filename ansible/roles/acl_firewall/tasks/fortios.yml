@@ -1,20 +1,113 @@
 ---
-- name: "Acl_firewall | fortios | firewall policy allow-list"
+# FortiGate firewall policy — the primary enforcement point for inter-VLAN
+# traffic (docs/architecture-brief.md). fortios_firewall_policy references
+# named objects, never raw CIDRs or proto/port strings, so the address and
+# service objects are created first, then the policies that consume them.
+#
+# Build order:
+#   1. firewall address objects   — one per unique src/dst CIDR
+#   2. firewall service objects   — one per unique proto/port service
+#   3. firewall policies          — the explicit allow-list / deny rules
+#   4. catch-all policy           — renders the deny-by-default posture
+#
+# Object names are derived deterministically from the CIDR / service so a
+# re-run is idempotent and two rules sharing a subnet share one object.
+
+- name: "Acl_firewall | fortios | collect the unique address objects"
+  ansible.builtin.set_fact:
+    _acl_firewall_fortios_addrs: >-
+      {{ (acl_firewall_rules | map(attribute='src')
+          + acl_firewall_rules | map(attribute='dst'))
+         | map('string') | unique | list }}
+
+- name: "Acl_firewall | fortios | create firewall address objects"
+  fortinet.fortios.fortios_firewall_address:
+    vdom: "{{ fortios_vdom | default('root') }}"
+    state: present
+    firewall_address:
+      name: "acl-net-{{ item | replace('/', '_') }}"
+      type: ipmask
+      subnet: "{{ item }}"
+      comment: "Managed by the acl_firewall role."
+  loop: "{{ _acl_firewall_fortios_addrs }}"
+  loop_control:
+    label: "acl-net-{{ item | replace('/', '_') }}"
+
+- name: "Acl_firewall | fortios | create firewall service objects"
+  fortinet.fortios.fortios_firewall_service_custom:
+    vdom: "{{ fortios_vdom | default('root') }}"
+    state: present
+    firewall_service_custom:
+      name: "acl-svc-{{ item.service | string | lower | replace('/', '-') }}"
+      comment: "Managed by the acl_firewall role."
+      protocol: >-
+        {{ 'ICMP' if (item.service | string | lower) == 'icmp'
+           else ('IP' if (item.service | string | lower) == 'ip'
+                 else 'TCP/UDP/UDP-Lite/SCTP') }}
+      tcp_portrange: >-
+        {{ (item.service | string | lower | split('/'))[1]
+           if (item.service | string | lower).startswith('tcp/')
+           else omit }}
+      udp_portrange: >-
+        {{ (item.service | string | lower | split('/'))[1]
+           if (item.service | string | lower).startswith('udp/')
+           else omit }}
+  loop: "{{ acl_firewall_rules | unique(attribute='service') }}"
+  loop_control:
+    label: "acl-svc-{{ item.service | string | lower | replace('/', '-') }}"
+
+# Explicit rules. Policy ids start at 10 and step by 10, leaving 1-9 free for
+# any manually-pinned high-priority policy. logtraffic: all so every match is
+# auditable in the SIEM (docs/architecture-brief.md).
+- name: "Acl_firewall | fortios | configure the explicit firewall policies"
   fortinet.fortios.fortios_firewall_policy:
-    vdom: root
+    vdom: "{{ fortios_vdom | default('root') }}"
     state: present
     firewall_policy:
       policyid: "{{ (idx + 1) * 10 }}"
-      name: "{{ item.name }}"
-      srcintf: [{name: any}]
-      dstintf: [{name: any}]
-      srcaddr: [{name: "{{ item.src }}"}]
-      dstaddr: [{name: "{{ item.dst }}"}]
-      service: [{name: "{{ item.service | default('ALL') }}"}]
+      name: "acl-{{ item.name }}"
+      srcintf:
+        - name: "{{ fortios_acl_srcintf | default('any') }}"
+      dstintf:
+        - name: "{{ fortios_acl_dstintf | default('any') }}"
+      srcaddr:
+        - name: "acl-net-{{ item.src | string | replace('/', '_') }}"
+      dstaddr:
+        - name: "acl-net-{{ item.dst | string | replace('/', '_') }}"
+      service:
+        - name: "acl-svc-{{ item.service | string | lower | replace('/', '-') }}"
       action: "{{ 'accept' if item.action == 'allow' else 'deny' }}"
       schedule: always
+      status: enable
       logtraffic: all
+      comments: "Managed by the acl_firewall role."
   loop: "{{ acl_firewall_rules }}"
   loop_control:
     index_var: idx
-    label: "{{ item.name }}"
+    label: "acl-{{ item.name }}"
+
+# Catch-all policy. FortiGate has an implicit deny, but pinning the baseline
+# explicitly makes the posture auditable and lets a site run allow-by-default
+# if the policy ever demands it. Sits at policyid 9000, after every rule above.
+- name: "Acl_firewall | fortios | enforce the default-action catch-all policy"
+  fortinet.fortios.fortios_firewall_policy:
+    vdom: "{{ fortios_vdom | default('root') }}"
+    state: present
+    firewall_policy:
+      policyid: 9000
+      name: acl-default-action
+      srcintf:
+        - name: "{{ fortios_acl_srcintf | default('any') }}"
+      dstintf:
+        - name: "{{ fortios_acl_dstintf | default('any') }}"
+      srcaddr:
+        - name: all
+      dstaddr:
+        - name: all
+      service:
+        - name: ALL
+      action: "{{ 'accept' if acl_firewall_default_action == 'allow' else 'deny' }}"
+      schedule: always
+      status: enable
+      logtraffic: all
+      comments: "acl_firewall deny-by-default baseline — do not reorder above rules."

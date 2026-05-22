@@ -1,17 +1,46 @@
 ---
-# On a Linux-based switch, packet filtering is nftables, not FRR. Render a
-# deny-by-default ruleset with explicit allows.
-- name: "Acl_firewall | frr | nftables deny-by-default ruleset"
+# On a Linux-based switch the packet filter is nftables, not FRR — FRR only
+# moves routes. This renders /etc/nftables.conf as a deny-by-default forward
+# chain plus the explicit rules.
+#
+# Two vendor-agnostic terms need translating to nftables:
+#   - default action: nftables chain policy is `accept` / `drop`, never
+#     allow/deny — _acl_nft_policy maps it.
+#   - per-rule action: each rule's own action is honoured (`accept` / `drop`),
+#     and its service is rendered as an `ip protocol` + `dport` match so a
+#     rule scoped to tcp/443 does not silently widen to all ports.
+#
+# A rule whose service is `ip` matches all protocols (no L4 match); `icmp`
+# matches the icmp protocol with no port.
+
+- name: "Acl_firewall | frr | render the nftables ruleset"
   ansible.builtin.copy:
     dest: /etc/nftables.conf
     mode: "0644"
     content: |
+      #!/usr/sbin/nft -f
+      # Managed by the acl_firewall Ansible role — do not edit by hand.
+      flush ruleset
+
       table inet filter {
         chain forward {
-          type filter hook forward priority 0; policy {{ acl_firewall_default_action }};
+          type filter hook forward priority 0; policy {{ _acl_nft_policy }};
       {% for r in acl_firewall_rules %}
-          ip saddr {{ r.src }} ip daddr {{ r.dst }} accept
+      {%   set svc = r.service | string | lower %}
+      {%   set verdict = 'accept' if r.action == 'allow' else 'drop' %}
+      {%   if svc.startswith('tcp/') %}
+          ip saddr {{ r.src }} ip daddr {{ r.dst }} tcp dport {{ svc.split('/')[1] }} {{ verdict }} comment "{{ r.name }}"
+      {%   elif svc.startswith('udp/') %}
+          ip saddr {{ r.src }} ip daddr {{ r.dst }} udp dport {{ svc.split('/')[1] }} {{ verdict }} comment "{{ r.name }}"
+      {%   elif svc == 'icmp' %}
+          ip saddr {{ r.src }} ip daddr {{ r.dst }} ip protocol icmp {{ verdict }} comment "{{ r.name }}"
+      {%   else %}
+          ip saddr {{ r.src }} ip daddr {{ r.dst }} {{ verdict }} comment "{{ r.name }}"
+      {%   endif %}
       {% endfor %}
         }
       }
+  vars:
+    # nftables chain policy keyword is accept/drop, not allow/deny.
+    _acl_nft_policy: "{{ 'accept' if acl_firewall_default_action == 'allow' else 'drop' }}"
   notify: Reload nftables
