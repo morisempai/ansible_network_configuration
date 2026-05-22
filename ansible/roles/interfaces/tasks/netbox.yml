@@ -3,16 +3,49 @@
 #
 # Included by tasks/main.yml when netbox_enabled is true. Interfaces are
 # native NetBox DCIM objects, queried directly with nb_lookup for this
-# device. NetBox interface 'mode' (access / tagged / tagged-all) is passed
-# through unchanged. Overrides interfaces_config; see docs/netbox.md.
-- name: "Interfaces | netbox | resolve interfaces from NetBox DCIM"
+# device. NetBox L2 mode (access / tagged / tagged-all) is translated onto
+# the role's vendor-agnostic mode (access / trunk); an interface with no
+# NetBox mode is left mode-less, so only its physical attributes are applied.
+# Null-valued NetBox fields are dropped so they do not trip tasks/assert.yml.
+# Overrides interfaces_config; see docs/netbox.md.
+- name: "Interfaces | netbox | query interfaces from NetBox DCIM"
   ansible.builtin.set_fact:
-    interfaces_config: >-
+    _interfaces_netbox: >-
       {{ query('netbox.netbox.nb_lookup', 'interfaces',
                api_endpoint=netbox_url,
                token=netbox_token,
                validate_certs=netbox_validate_certs,
                api_filter='device=' ~ inventory_hostname)
-         | community.general.json_query('[].value.{name: name,
-           description: description, enabled: enabled, mtu: mtu,
-           mode: mode.value, trunk_vlans: tagged_vlans[].vid}') }}
+         | map(attribute='value') | list }}
+
+- name: "Interfaces | netbox | start from an empty interface list"
+  ansible.builtin.set_fact:
+    interfaces_config: []
+
+- name: "Interfaces | netbox | translate NetBox interfaces to the role schema"
+  ansible.builtin.set_fact:
+    interfaces_config: >-
+      {{ interfaces_config + [
+           {'name': item.name,
+            'description': item.description,
+            'enabled': item.enabled,
+            'mtu': item.mtu}
+           | combine({'mode': _nb_mode_map[_nb_mode]}
+                     if _nb_mode in _nb_mode_map else {})
+           | combine({'access_vlan': item.untagged_vlan.vid}
+                     if (item.untagged_vlan is defined and item.untagged_vlan)
+                     else {})
+           | combine({'trunk_vlans': (item.tagged_vlans | default([]))
+                                     | map(attribute='vid') | list}
+                     if (item.tagged_vlans | default([])) else {})
+           | dict2items | rejectattr('value', 'none') | items2dict
+         ] }}
+  loop: "{{ _interfaces_netbox }}"
+  loop_control:
+    label: "{{ item.name }}"
+  vars:
+    _nb_mode: "{{ item.mode.value if (item.mode is defined and item.mode) else '' }}"
+    _nb_mode_map:
+      access: access
+      tagged: trunk
+      tagged-all: trunk

@@ -14,7 +14,9 @@
 # 'select' drops the empty candidate when ansible_network_os is unknown —
 # otherwise first_found matches the tasks/ directory itself. Missing
 # implementations are silently skipped (errors='ignore'), so a role that does
-# not target every vendor still lints and runs.
+# not target every vendor still lints and runs. On ansible-core >= 2.18
+# first_found returns None rather than '' when nothing matches, so
+# default('', true) normalises it and keeps the 'when' guard below safe.
 
 - name: "Common | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
@@ -32,5 +34,5 @@
     _vendor_task_file: >-
       {{ lookup('ansible.builtin.first_found',
                 _candidates | select | list, errors='ignore',
-                paths=[role_path + '/tasks']) }}
+                paths=[role_path + '/tasks']) | default('', true) }}
   when: _vendor_task_file | length > 0

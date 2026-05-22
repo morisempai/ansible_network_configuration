@@ -1,5 +1,12 @@
 ---
-- name: "Interfaces | cisco_ios | base interface attributes"
+# C9300 core / C9200 access physical interface configuration.
+#
+# Applied in order: physical attributes for every interface, then L2
+# access/trunk mode for switchports, then `no switchport` for routed ports,
+# then LACP bundle membership. IP addressing on routed ports is the
+# l3_routing role's responsibility.
+
+- name: "Interfaces | cisco_ios | physical attributes (description, admin state, MTU)"
   cisco.ios.ios_interfaces:
     config:
       - name: "{{ item.name }}"
@@ -11,16 +18,50 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: "Interfaces | cisco_ios | L2 mode"
+# ios_l2_interfaces has no 'routed' value, so only access/trunk ports are fed
+# to it. trunk.allowed_vlans is the per-port allow-list — the vlans role only
+# declares that the VLANs exist.
+- name: "Interfaces | cisco_ios | access / trunk L2 mode"
   cisco.ios.ios_l2_interfaces:
     config:
       - name: "{{ item.name }}"
-        mode: "{{ item.mode | default('access') }}"
+        mode: "{{ item.mode }}"
         access:
           vlan: "{{ item.access_vlan | default(omit) }}"
         trunk:
           allowed_vlans: "{{ item.trunk_vlans | default(omit) }}"
     state: merged
-  loop: "{{ interfaces_config | selectattr('mode', 'defined') | list }}"
+  loop: >-
+    {{ interfaces_config | selectattr('mode', 'defined')
+       | selectattr('mode', 'in', ['access', 'trunk']) | list }}
   loop_control:
     label: "{{ item.name }}"
+
+# A routed port is an L3 interface: take it out of switching. ios_config is
+# used because the IOS resource modules have no switchport toggle.
+- name: "Interfaces | cisco_ios | routed ports — no switchport"
+  cisco.ios.ios_config:
+    lines:
+      - no switchport
+    parents: "interface {{ item.name }}"
+  loop: >-
+    {{ interfaces_config | selectattr('mode', 'defined')
+       | selectattr('mode', 'eq', 'routed') | list }}
+  loop_control:
+    label: "{{ item.name }}"
+
+# LACP membership. Servers attach to the C9300 stack via cross-stack
+# port-channels (docs/architecture-brief.md); the bundle id is given per
+# interface as channel_group. Member ports join the bundle as LACP active and
+# the Port-channel logical interface is created on demand.
+- name: "Interfaces | cisco_ios | LACP port-channel membership"
+  cisco.ios.ios_lag_interfaces:
+    config:
+      - name: "Port-channel{{ item.channel_group }}"
+        members:
+          - member: "{{ item.name }}"
+            mode: active
+    state: merged
+  loop: "{{ interfaces_config | selectattr('channel_group', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.name }} -> Po{{ item.channel_group }}"

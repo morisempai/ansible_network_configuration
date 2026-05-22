@@ -32,5 +32,5 @@
     _vendor_task_file: >-
       {{ lookup('ansible.builtin.first_found',
                 _candidates | select | list, errors='ignore',
-                paths=[role_path + '/tasks']) }}
+                paths=[role_path + '/tasks']) | default('', true) }}
   when: _vendor_task_file | length > 0
