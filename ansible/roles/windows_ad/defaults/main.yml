@@ -1,5 +1,43 @@
 ---
+# windows_ad role inputs.
+#
+# In staging and production these are resolved from each device's NetBox
+# config context (see tasks/netbox.yml); the values below are the lab /
+# Molecule fallback used when netbox_enabled is off.
+
+# DNS (FQDN) name of the Active Directory domain, e.g. "corp.example.internal".
+# Must be a dotted name - tasks/assert.yml rejects single-label domains.
 windows_ad_domain: example.internal
+
+# Promote this host as the *primary* domain controller (creates a new forest).
+# When false the host joins an existing domain as a replica DC and
+# windows_ad_replica_of must name the DC to replicate from.
 windows_ad_is_primary: false
+
+# FQDN of an existing domain controller a replica replicates from.
+# Required when windows_ad_is_primary is false; ignored for the primary.
 windows_ad_replica_of: ""
-# windows_ad_safe_mode_password comes from vault — no default on purpose.
+
+# --- Secrets: vault-sourced, never defaulted here, never read from NetBox ---
+#
+# The three variables below are deliberately left undefined in this file.
+# They hold credentials and must be supplied from Ansible Vault (see the
+# repo's group_vars/windows.yml, which maps the vault_* variables onto
+# them). tasks/assert.yml fails fast if a required secret is missing, and
+# every task that consumes one sets no_log: true.
+#
+#   windows_ad_safe_mode_password
+#       Directory Services Restore Mode (DSRM) password assigned to the
+#       domain controller. Required on every host. Map from vault, e.g.:
+#         windows_ad_safe_mode_password: "{{ vault_ad_safe_mode_password }}"
+#
+#   windows_ad_join_user
+#       Domain administrator account ("DOMAIN\\user" or UPN form) used to
+#       authorise a *replica* DC promotion against the existing domain.
+#       Required only when windows_ad_is_primary is false. Map from vault:
+#         windows_ad_join_user: "{{ vault_ad_join_user }}"
+#
+#   windows_ad_join_password
+#       Password for windows_ad_join_user. Required only for a replica.
+#       Map from vault:
+#         windows_ad_join_password: "{{ vault_ad_join_password }}"

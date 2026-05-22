@@ -1,25 +1,39 @@
 ---
+# Windows-only implementation of the windows_ad role. Reached directly from
+# tasks/main.yml - windows_ad does not dispatch per network vendor.
+#
+# Both microsoft.ad.domain and microsoft.ad.domain_controller are idempotent:
+# once the host is a domain controller they report ok/changed=0, so a second
+# run is a clean no-op.
+
 - name: "Windows_ad | install AD-Domain-Services feature"
   ansible.windows.win_feature:
     name: AD-Domain-Services
     include_management_tools: true
     state: present
 
+# Primary DC: creates a new forest rooted at windows_ad_domain. No domain
+# credentials are needed - there is no existing domain to authenticate to.
 - name: "Windows_ad | promote primary domain controller"
   microsoft.ad.domain:
     dns_domain_name: "{{ windows_ad_domain }}"
     safe_mode_password: "{{ windows_ad_safe_mode_password }}"
     reboot: true
+  no_log: true
   when: windows_ad_is_primary | bool
 
+# Replica DC: joins the existing domain and replicates from the DC named by
+# windows_ad_replica_of. The promotion has to authenticate to the live
+# domain, so it needs domain-admin join credentials - both vault-sourced
+# (see defaults/main.yml and the README), never hardcoded.
 - name: "Windows_ad | promote replica domain controller"
   microsoft.ad.domain_controller:
     dns_domain_name: "{{ windows_ad_domain }}"
     safe_mode_password: "{{ windows_ad_safe_mode_password }}"
-    domain_admin_user: "ANSIBLE\\ansible"
-    domain_admin_password: "{{ vault_ad_join_password | default(omit) }}"
+    domain_admin_user: "{{ windows_ad_join_user }}"
+    domain_admin_password: "{{ windows_ad_join_password }}"
+    replication_source_dc: "{{ windows_ad_replica_of }}"
     state: domain_controller
     reboot: true
-  when:
-    - not (windows_ad_is_primary | bool)
-    - windows_ad_replica_of | length > 0
+  no_log: true
+  when: not (windows_ad_is_primary | bool)
