@@ -1,21 +1,56 @@
 ---
-- name: "Users_aaa | cisco_ios | RADIUS servers"
-  cisco.ios.ios_radius_server:
-    config:
-      hosts:
-        - name: "{{ item.host }}"
-          key: "{{ item.secret }}"
-          timeout: "{{ item.timeout | default(5) }}"
+# AAA / RADIUS / 802.1X on the C9300 core and C9200 access stacks.
+#
+# cisco.ios has no RADIUS resource module — there is no ios_radius_server or
+# ios_radius in this collection (verified with ansible-doc) — so the RADIUS
+# server blocks and the global AAA / dot1x config are pushed with ios_config.
+# Each `radius server NAME` block is its own parents section; ios_config
+# diffs the child lines against the running-config so re-runs are idempotent.
+#
+# Break-glass local accounts (users_aaa_local) are deliberately not created
+# here — see the linux path and the README "Scope" section.
+
+- name: "Users_aaa | cisco_ios | RADIUS server definitions"
+  cisco.ios.ios_config:
+    parents: "radius server {{ item.host | replace('.', '-') }}"
+    lines:
+      - "address ipv4 {{ item.host }} auth-port 1812 acct-port 1813"
+      - "key {{ item.secret }}"
+      - "timeout {{ item.timeout | default(5) | int }}"
   loop: "{{ users_aaa_servers }}"
   loop_control:
     label: "{{ item.host }}"
   no_log: true
 
-- name: "Users_aaa | cisco_ios | AAA + 802.1X"
+# Collect the RADIUS servers into a named group so the dot1x method lists
+# below reference exactly the servers in users_aaa_servers. Skipped when no
+# servers are defined — there is nothing to authenticate against.
+#
+# Each `server name` must match the name of a `radius server` block defined
+# above, which is `host` with dots replaced by dashes — so the same
+# replacement is applied here, otherwise the group references a server that
+# does not exist.
+- name: "Users_aaa | cisco_ios | AAA RADIUS server group"
+  cisco.ios.ios_config:
+    parents: "aaa group server radius radius-servers"
+    lines: >-
+      {{ users_aaa_servers
+         | map(attribute='host')
+         | map('regex_replace', '\.', '-')
+         | map('regex_replace', '^(.+)$', 'server name \1')
+         | list }}
+  when: users_aaa_servers | length > 0
+
+# Global AAA + wired 802.1X. `aaa new-model` must precede the method lists,
+# which reference the radius-servers group built above. Guarded on having at
+# least one server so dot1x is never enabled against an empty group.
+- name: "Users_aaa | cisco_ios | enable AAA and 802.1X"
   cisco.ios.ios_config:
     lines:
       - aaa new-model
-      - aaa authentication dot1x default group radius
-      - aaa authorization network default group radius
+      - aaa authentication dot1x default group radius-servers
+      - aaa authorization network default group radius-servers
       - dot1x system-auth-control
-  when: users_aaa_dot1x.enabled | bool
+  when:
+    - users_aaa_dot1x.enabled | bool
+    - users_aaa_servers | length > 0

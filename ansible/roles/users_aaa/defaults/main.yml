@@ -1,8 +1,43 @@
 ---
+# Inputs for the users_aaa role.
+#
+# All three variables are the vendor-agnostic interface every
+# tasks/<vendor>.yml file consumes, and tasks/assert.yml enforces them.
+#
+# users_aaa_servers — the RADIUS servers wired 802.1X authenticates against.
+# A list of objects:
+#
+#   users_aaa_servers:
+#     - host:    10.0.10.40   # required, non-empty (IP or resolvable name)
+#       secret:  "{{ vault_radius_secret }}"   # required, non-empty; Vault
+#       timeout: 5            # optional, positive integer, default 5
+#
+# Defaults from the network-wide `aaa_servers` list in
+# group_vars/network.yml. When netbox_enabled is true, tasks/netbox.yml
+# replaces it with the device's config context. RADIUS secrets always come
+# from Ansible Vault — never commit a plaintext secret.
 users_aaa_servers: "{{ aaa_servers | default([]) }}"
+
+# users_aaa_dot1x — wired 802.1X NAC settings. A mapping; `enabled` is the
+# only key this role reads and it must be a boolean. Defaults from the
+# network-wide `dot1x` mapping in group_vars/network.yml.
+#
+#   users_aaa_dot1x:
+#     enabled: true           # required boolean
 users_aaa_dot1x: "{{ dot1x | default({'enabled': false}) }}"
 
-# Break-glass local accounts. Passwords/hashes come from vault.
+# users_aaa_local — break-glass local accounts, the RADIUS-independent
+# fallback used when every RADIUS server is unreachable. A list of objects:
+#
+#   users_aaa_local:
+#     - name: netadmin        # required, non-empty, unique
+#       role: admin           # required, non-empty (admin | operator | ...)
+#       password: "{{ vault_netadmin_hash }}"   # optional, Vault hash
+#
+# Passwords/hashes are never defaulted here — an account is given a password
+# only when the caller supplies a Vault-encrypted `password` on the entry.
+# At least one admin account is kept so a device is never left without a
+# local way in.
 users_aaa_local:
   - name: netadmin
     role: admin

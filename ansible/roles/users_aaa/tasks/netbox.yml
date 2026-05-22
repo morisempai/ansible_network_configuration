@@ -3,8 +3,14 @@
 #
 # Included by tasks/main.yml when netbox_enabled is true. AAA servers,
 # 802.1X settings and break-glass local accounts have no native NetBox
-# model, so they come from the device's config context. Secrets stay in
-# vault and are never sourced from NetBox. See docs/netbox.md.
+# model, so they come from the device's merged config context, falling back
+# to the static defaults for any key NetBox does not supply. See docs/netbox.md.
+#
+# Secrets are never sourced from NetBox. The config context carries only the
+# non-secret server attributes (host, timeout); each RADIUS `secret` and each
+# local-account `password` is a Vault-encrypted value layered in by
+# group_vars/host_vars, so it survives this set_fact. tasks/assert.yml then
+# enforces that every server actually ended up with a non-empty secret.
 - name: "Users_aaa | netbox | resolve AAA inputs from config context"
   ansible.builtin.set_fact:
     users_aaa_servers: "{{ config_context.aaa_servers | default(users_aaa_servers) }}"
