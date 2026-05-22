@@ -1,5 +1,16 @@
 ---
-- name: "Interfaces | srlinux | configure interfaces"
+# Nokia SR Linux physical interface configuration and L2 binding.
+#
+# Physical attributes live on /interface. An L2 broadcast domain on SR Linux
+# is a mac-vrf network-instance — created by the vlans role — and a port
+# joins it through a bridged subinterface. This role builds those
+# subinterfaces and binds them:
+#   access -> one untagged subinterface (.0)
+#   trunk  -> one single-tagged subinterface per VLAN (.<vlan-id>)
+#   routed -> physical attributes only; IP addressing is the l3_routing role.
+# Run the vlans role first so the target mac-vrf instances already exist.
+
+- name: "Interfaces | srlinux | physical interface attributes"
   nokia.srlinux.config:
     update:
       - path: "/interface[name={{ item.name }}]"
@@ -7,6 +18,43 @@
           admin-state: "{{ 'enable' if item.enabled | default(true) else 'disable' }}"
           description: "{{ item.description | default(omit) }}"
           mtu: "{{ item.mtu | default(omit) }}"
+          vlan-tagging: "{{ (item.mode | default('access')) == 'trunk' }}"
   loop: "{{ interfaces_config }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: "Interfaces | srlinux | access port — untagged subinterface bound to its VLAN"
+  nokia.srlinux.config:
+    update:
+      - path: "/interface[name={{ item.name }}]/subinterface[index=0]"
+        value:
+          type: bridged
+          admin-state: enable
+      - path: "/network-instance[name=vlan-{{ item.access_vlan }}]/interface[name={{ item.name }}.0]"
+        value: {}
+  loop: >-
+    {{ interfaces_config | selectattr('mode', 'defined')
+       | selectattr('mode', 'eq', 'access')
+       | selectattr('access_vlan', 'defined') | list }}
+  loop_control:
+    label: "{{ item.name }} (access vlan {{ item.access_vlan }})"
+
+- name: "Interfaces | srlinux | trunk port — one tagged subinterface per VLAN"
+  nokia.srlinux.config:
+    update:
+      - path: "/interface[name={{ item.0.name }}]/subinterface[index={{ item.1 }}]"
+        value:
+          type: bridged
+          admin-state: enable
+          vlan:
+            encap:
+              single-tagged:
+                vlan-id: "{{ item.1 }}"
+      - path: "/network-instance[name=vlan-{{ item.1 }}]/interface[name={{ item.0.name }}.{{ item.1 }}]"
+        value: {}
+  loop: >-
+    {{ interfaces_config | selectattr('mode', 'defined')
+       | selectattr('mode', 'eq', 'trunk')
+       | subelements('trunk_vlans', skip_missing=True) }}
+  loop_control:
+    label: "{{ item.0.name }} (trunk vlan {{ item.1 }})"

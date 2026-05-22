@@ -1,7 +1,11 @@
 ---
-- name: "Interfaces | fortios | configure interfaces"
+# FortiGate physical port attributes. A FortiGate has no switch-style
+# access/trunk model — VLANs are tagged sub-interfaces created by the vlans
+# role (router-on-a-stick, docs/architecture-brief.md). This role configures
+# the physical port's description, admin status and MTU only.
+- name: "Interfaces | fortios | configure physical interfaces"
   fortinet.fortios.fortios_system_interface:
-    vdom: root
+    vdom: "{{ fortios_vdom | default('root') }}"
     state: present
     system_interface:
       name: "{{ item.name }}"

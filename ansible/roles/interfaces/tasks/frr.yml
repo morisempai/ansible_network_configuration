@@ -1,9 +1,8 @@
 ---
-- name: "Interfaces | frr | configure interfaces"
-  ansible.netcommon.cli_config:
-    config: |
-      {% for i in interfaces_config %}
-      interface {{ i.name }}
-       {{ 'no shutdown' if i.enabled | default(true) else 'shutdown' }}
-       {% if i.description is defined %}description {{ i.description }}{% endif %}
-      {% endfor %}
+# FRR is a routing daemon. Interface admin-state, MTU and LACP bonding on a
+# Linux/FRR host are kernel objects owned by the host network stack (the
+# linux_base role), and switch-style access/trunk mode does not apply to FRR
+# at all. Stub keeps the dispatch contract intact — mirrors vlans/tasks/frr.yml.
+- name: "Interfaces | frr | interface attributes are kernel objects (no-op)"
+  ansible.builtin.debug:
+    msg: "Interface attributes on FRR/Linux hosts are managed by linux_base."

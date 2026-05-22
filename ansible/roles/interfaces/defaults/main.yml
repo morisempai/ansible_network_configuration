@@ -1,9 +1,21 @@
 ---
-# Default: no interfaces. Real values come from NetBox or host_vars.
+# Inputs for the interfaces role.
+#
+# interfaces_config — the per-interface settings this role applies. A list of
+# objects; this is the vendor-agnostic interface every tasks/<vendor>.yml file
+# consumes, and tasks/assert.yml enforces it:
+#
+#   interfaces_config:
+#     - name: GigabitEthernet1/0/1   # required, non-empty, unique
+#       description: uplink to core  # optional
+#       enabled: true                # optional boolean, default true
+#       mtu: 9100                    # optional positive integer
+#       mode: trunk                  # optional: access | trunk | routed
+#       access_vlan: 40              # optional, with mode == access
+#       trunk_vlans: [10, 20, 40]    # optional, with mode == trunk
+#       channel_group: 1             # optional LACP bundle id
+#
+# Interfaces are per-device, so there is no network-wide default list. Values
+# come from host_vars for static runs; when netbox_enabled is true,
+# tasks/netbox.yml replaces this with the device's interfaces from NetBox DCIM.
 interfaces_config: []
-# - name: ethernet-1/1
-#   description: example
-#   enabled: true
-#   mtu: 9100
-#   mode: trunk
-#   trunk_vlans: [10, 20, 40]

@@ -1,7 +1,8 @@
 ---
 # Schema check for interfaces_config. Pins the vendor-agnostic interface:
 # every tasks/<vendor>.yml file can assume each item has a non-empty `name`
-# and, where present, well-typed optional fields. Runs after NetBox resolution.
+# and, where present, well-typed optional fields. Runs after NetBox
+# resolution, so it validates whatever actually feeds the device task.
 - name: "Interfaces | assert | every interface is well-formed"
   ansible.builtin.assert:
     quiet: true
@@ -12,12 +13,21 @@
       - (item.mtu is not defined) or (item.mtu is integer and item.mtu > 0)
       - (item.mode is not defined) or
         (item.mode in ['access', 'trunk', 'routed'])
+      - (item.access_vlan is not defined) or
+        (item.access_vlan is integer and item.access_vlan >= 1
+         and item.access_vlan <= 4094)
       - (item.trunk_vlans is not defined) or
         (item.trunk_vlans is sequence and item.trunk_vlans is not string)
+      - (item.trunk_vlans is not defined) or
+        (item.trunk_vlans | select('integer') | list | length
+         == item.trunk_vlans | length)
+      - (item.channel_group is not defined) or
+        (item.channel_group is integer and item.channel_group > 0)
     fail_msg: >-
-      Invalid interface entry {{ item }} — needs a non-empty `name`; optional
-      `enabled` must be boolean, `mtu` a positive integer, `mode` one of
-      access/trunk/routed, and `trunk_vlans` a list.
+      Invalid interface entry {{ item }} — needs a non-empty `name`. Optional
+      fields, when present: `enabled` boolean, `mtu` a positive integer,
+      `mode` one of access/trunk/routed, `access_vlan` an integer 1-4094,
+      `trunk_vlans` a list of integers, `channel_group` a positive integer.
   loop: "{{ interfaces_config }}"
   loop_control:
     label: "{{ item.name | default('?') }}"
