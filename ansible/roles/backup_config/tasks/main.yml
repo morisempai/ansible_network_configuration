@@ -9,14 +9,22 @@
 - name: "Backup_config | validate role inputs"
   ansible.builtin.include_tasks: assert.yml
 
-- name: "Backup_config | ensure backup directory exists"
+# The destination lives on the control node — every vendor task writes its
+# config there via delegate_to: localhost — so the directory is created
+# there too. check_mode: false means --check still prepares the target so
+# the (read-only) backup tasks below have somewhere to write.
+- name: "Backup_config | ensure per-device backup directory exists"
   ansible.builtin.file:
     path: "{{ backup_config_dir }}/{{ inventory_hostname }}"
     state: directory
     mode: "0750"
   delegate_to: localhost
+  check_mode: false
 
 # Dispatcher — see roles/common/tasks/main.yml for the documented pattern.
+# backup_config has no generic linux.yml (a Linux server has no network
+# "running-config" to pull), so the dispatch map is network-OS only; on a
+# plain Linux host first_found matches nothing and the include is a no-op.
 - name: "Backup_config | include vendor task file"
   ansible.builtin.include_tasks: "{{ _vendor_task_file }}"
   vars:
@@ -28,9 +36,15 @@
       fortinet.fortios.fortios: fortios.yml
     _candidates:
       - "{{ _vendor_map[ansible_network_os | default('none')] | default('') }}"
-      - "linux.yml"
     _vendor_task_file: >-
       {{ lookup('ansible.builtin.first_found',
                 _candidates | select | list, errors='ignore',
                 paths=[role_path + '/tasks']) | default('', true) }}
   when: _vendor_task_file | length > 0
+
+# Commit and push the backup tree to its git repository when asked. Runs once
+# on the control node after every device has written its file. See git.yml.
+- name: "Backup_config | publish backups to the git repository"
+  ansible.builtin.include_tasks: git.yml
+  when: backup_config_git_push | bool
+  run_once: true

@@ -2,6 +2,15 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  vars:
+    # Representative inputs — drives tasks/assert.yml and the dispatcher. On a
+    # plain Linux molecule host there is no ansible_network_os, so the role
+    # validates the inputs, creates the per-host backup directory, then
+    # resolves to a no-op: backup_config has no linux.yml because a Linux
+    # server has no network "running-config" to pull. git_push is left off so
+    # the scenario needs no git remote.
+    backup_config_dir: "/tmp/molecule-backups"
+    backup_config_git_push: false
   tasks:
     - name: "Apply the backup_config role"
       ansible.builtin.include_role:

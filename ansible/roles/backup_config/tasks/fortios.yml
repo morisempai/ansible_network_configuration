@@ -1,14 +1,34 @@
 ---
+# The FortiGate HA pairs (200F at HQ, 100F at the regional sites) expose the
+# full device configuration through the monitor API. The system_config_backup
+# selector is a download-type endpoint: fortios_monitor_fact returns the raw
+# configuration text under `meta.raw`. It is a GET — a pure read — so it runs
+# unchanged under --check.
+#
+# fortios_monitor_fact has no per-task check_mode toggle; it is a fact module
+# and never reports a change, so --check needs no special handling here.
 - name: "Backup_config | fortios | fetch full configuration"
   fortinet.fortios.fortios_monitor_fact:
     selector: system_config_backup
-    vdom: root
+    vdom: "{{ fortios_vdom | default('root') }}"
   register: backup_config_fgt_backup
 
-- name: "Backup_config | fortios | write config to file"
+# Fail loudly rather than commit an empty backup file: an empty config dump
+# means the monitor call did not return what we expect, and a silent zero-byte
+# rollback artefact is worse than a hard failure (docs/testing.md).
+- name: "Backup_config | fortios | assert the configuration dump is non-empty"
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - backup_config_fgt_backup.meta.raw | default('') | length > 0
+    fail_msg: >-
+      system_config_backup returned no configuration for
+      {{ inventory_hostname }} — refusing to write an empty backup file.
+
+- name: "Backup_config | fortios | write configuration to the backup tree"
   ansible.builtin.copy:
     dest: >-
       {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.conf
-    content: "{{ backup_config_fgt_backup.meta.raw | default('') }}"
+    content: "{{ backup_config_fgt_backup.meta.raw }}"
     mode: "0640"
   delegate_to: localhost

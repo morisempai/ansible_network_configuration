@@ -1,7 +1,22 @@
 ---
+# The C9300 core, C9200 access and CBS350 balancer all run Cisco IOS / IOS-XE.
+# ios_command issues `show running-config` — a pure read — rather than
+# ios_config with `backup: true`: ios_config is a configuration module whose
+# check-mode behaviour is awkward, and ios_command keeps this role a clean
+# read operation that behaves identically under --check. The result is then
+# written to the backup tree with the same fetch-then-copy shape every other
+# vendor task in this role uses.
 - name: "Backup_config | cisco_ios | fetch running-config"
-  cisco.ios.ios_config:
-    backup: true
-    backup_options:
-      filename: "{{ inventory_hostname }}-{{ backup_config_timestamp }}.cfg"
-      dir_path: "{{ backup_config_dir }}/{{ inventory_hostname }}"
+  cisco.ios.ios_command:
+    commands:
+      - show running-config
+  register: backup_config_ios_running
+  check_mode: false
+
+- name: "Backup_config | cisco_ios | write running-config to the backup tree"
+  ansible.builtin.copy:
+    dest: >-
+      {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.cfg
+    content: "{{ backup_config_ios_running.stdout[0] }}\n"
+    mode: "0640"
+  delegate_to: localhost

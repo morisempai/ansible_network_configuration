@@ -1,0 +1,20 @@
+---
+# The MDS 9132T runs NX-OS and — unlike VLANs or Ethernet interfaces — it
+# very much has a device configuration that must be captured before any
+# change (docs/architecture-brief.md; docs/testing.md, "Backup before
+# change"). nxos_command issues `show running-config`, a pure read, so the
+# whole path is safe under --check (no nxos_config / backup side effects).
+- name: "Backup_config | cisco_nxos | fetch running-config"
+  cisco.nxos.nxos_command:
+    commands:
+      - show running-config
+  register: backup_config_nxos_running
+  check_mode: false
+
+- name: "Backup_config | cisco_nxos | write running-config to the backup tree"
+  ansible.builtin.copy:
+    dest: >-
+      {{ backup_config_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_config_timestamp }}.cfg
+    content: "{{ backup_config_nxos_running.stdout[0] }}\n"
+    mode: "0640"
+  delegate_to: localhost
