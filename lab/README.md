@@ -11,6 +11,7 @@ images.
 |---------------------|--------------------------------------------------|
 | `topology.clab.yml` | Containerlab topology definition                 |
 | `deploy.sh`         | `up` / `down` / `status` wrapper                 |
+| `setup-vm.sh`       | One-shot provisioner for a Debian/Ubuntu test VM |
 
 The Ansible inventory for the lab lives at
 `ansible/inventory/lab/hosts.yml` and its host names match the
@@ -36,6 +37,17 @@ Containerlab-assigned names (`clab-ansnet-<node>`).
 | `hq-linux01` | `ghcr.io/hellt/network-multitool`    | DL360 hypervisor     |
 
 ## Usage
+
+On a fresh Debian/Ubuntu VM, install everything the lab and test layers
+need (Docker, Containerlab, Python venv, Galaxy collections, pre-commit,
+lab images) in one shot:
+
+```bash
+./lab/setup-vm.sh                 # idempotent; re-run any time
+./lab/setup-vm.sh --skip-images   # skip pre-pulling container images
+```
+
+Then drive the lab itself:
 
 ```bash
 ./lab/deploy.sh up        # deploy (installs Containerlab on first run)
